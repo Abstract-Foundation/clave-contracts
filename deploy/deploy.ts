@@ -7,18 +7,19 @@ import type { ec } from 'elliptic';
 import {
     ZeroAddress,
     parseEther,
+    zeroPadValue
 } from 'ethers';
 import * as hre from 'hardhat';
 import { Contract, Provider, Wallet, utils } from 'zksync-ethers';
-import { LOCAL_RICH_WALLETS, deployContract, getWallet } from '../deploy/utils';
+import { LOCAL_RICH_WALLETS, deployContract, getWallet, verifyContract } from '../deploy/utils';
 import type { CallStruct } from '../typechain-types/contracts/batch/BatchCaller';
 import { genKeyK1, encodePublicKeyK1 } from '../test/utils/p256';
 let provider: Provider;
-let richWallet: Wallet;
+let fundingWallet: Wallet;
 let keyPair: ec.KeyPair;
 
 let batchCaller: Contract;
-let mockValidator: Contract;
+let eoaValidator: Contract;
 let implementation: Contract;
 let factory: Contract;
 let account: Contract;
@@ -32,18 +33,20 @@ export default async function (): Promise<void> {
         cacheTimeout: -1,
     });
 
-    richWallet = getWallet(hre);
+    fundingWallet = getWallet(hre);
 
     keyPair = genKeyK1();
     const publicKey = encodePublicKeyK1(keyPair);
 
+    console.log("authorized signer", publicKey);
+
     batchCaller = await deployContract(hre, 'BatchCaller', undefined, {
-        wallet: richWallet,
+        wallet: fundingWallet,
         silent: true,
     });
 
-    mockValidator = await deployContract(hre, 'EOAValidator', undefined, {
-        wallet: richWallet,
+    eoaValidator = await deployContract(hre, 'EOAValidator', undefined, {
+        wallet: fundingWallet,
         silent: true,
     });
 
@@ -52,26 +55,26 @@ export default async function (): Promise<void> {
         'ClaveImplementation',
         [await batchCaller.getAddress()],
         {
-            wallet: richWallet,
+            wallet: fundingWallet,
             silent: true,
         },
     );
 
     registry = await deployContract(hre, 'ClaveRegistry', undefined, {
-        wallet: richWallet,
+        wallet: fundingWallet,
         silent: true,
     });
 
-    //TODO: WHY DOES THIS HELP
-    await deployContract(
-        hre,
-        'ClaveProxy',
-        [await implementation.getAddress()],
-        { wallet: richWallet, silent: true },
-    );
+    // //TODO: WHY DOES THIS HELP
+    // await deployContract(
+    //     hre,
+    //     'ClaveProxy',
+    //     [await implementation.getAddress()],
+    //     { wallet: fundingWallet, silent: true },
+    // );
 
-    const accountArtifact = await hre.zksyncEthers.loadArtifact('ClaveProxy');
-    const bytecodeHash = utils.hashBytecode(accountArtifact.bytecode);
+    const accountProxyArtifact = await hre.zksyncEthers.loadArtifact('ClaveProxy');
+    const bytecodeHash = utils.hashBytecode(accountProxyArtifact.bytecode);
     factory = await deployContract(
         hre,
         'AccountFactory',
@@ -79,10 +82,10 @@ export default async function (): Promise<void> {
             await implementation.getAddress(),
             await registry.getAddress(),
             bytecodeHash,
-            richWallet.address,
+            fundingWallet.address,
         ],
         {
-            wallet: richWallet,
+            wallet: fundingWallet,
             silent: true,
         },
     );
@@ -109,7 +112,7 @@ export default async function (): Promise<void> {
                 ],
                 [
                     publicKey,
-                    await mockValidator.getAddress(),
+                    await eoaValidator.getAddress(),
                     [],
                     [call.target, call.allowFailure, call.value, call.callData],
                 ],
@@ -120,16 +123,24 @@ export default async function (): Promise<void> {
     await tx.wait();
 
     const accountAddress = await factory.getAddressForSalt(salt);
-    account = new Contract(
-        accountAddress,
-        implementation.interface,
-        richWallet,
-    );
-    // 100 ETH transfered to Account
-    await (
-        await richWallet.sendTransaction({
-            to: await account.getAddress(),
-            value: parseEther('0.0069'),
-        })
-    ).wait();
+    await verifyContract(hre, {
+        address: accountAddress,
+        contract: "contracts/ClaveProxy.sol:ClaveProxy",
+        constructorArguments: zeroPadValue(accountAddress, 32),
+        bytecode: accountProxyArtifact.bytecode
+    })
+    console.log("accountAddress", accountAddress)
+
+    // account = new Contract(
+    //     accountAddress,
+    //     implementation.interface,
+    //     fundingWallet,
+    // );
+    // // 0.0001 ETH transfered to Account
+    // await (
+    //     await fundingWallet.sendTransaction({
+    //         to: await account.getAddress(),
+    //         value: parseEther('0.0001'),
+    //     })
+    // ).wait();
 }

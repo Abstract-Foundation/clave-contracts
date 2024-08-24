@@ -14,7 +14,7 @@ import {IClaveRegistry} from './interfaces/IClaveRegistry.sol';
  */
 contract AccountFactory is Ownable {
     // Addresses of the implementation and registry contract
-    address public implementation;
+    address public implementationAddress;
     address public registry;
 
     // Account creation bytecode hash
@@ -65,7 +65,7 @@ contract AccountFactory is Ownable {
         bytes32 _proxyBytecodeHash,
         address deployer
     ) Ownable() {
-        implementation = _implementation;
+        implementationAddress = _implementation;
         registry = _registry;
         proxyBytecodeHash = _proxyBytecodeHash;
         _deployer = deployer;
@@ -97,7 +97,7 @@ contract AccountFactory is Ownable {
                 (
                     salt,
                     proxyBytecodeHash,
-                    abi.encode(implementation),
+                    abi.encode(implementationAddress),
                     IContractDeployer.AccountAbstractionVersion.Version1
                 )
             )
@@ -161,7 +161,7 @@ contract AccountFactory is Ownable {
      * @param newImplementation address - Address of the new implementation contract
      */
     function changeImplementation(address newImplementation) external onlyOwner {
-        implementation = newImplementation;
+        implementationAddress = newImplementation;
 
         emit ImplementationChanged(newImplementation);
     }
@@ -186,7 +186,7 @@ contract AccountFactory is Ownable {
             address(this),
             proxyBytecodeHash,
             salt,
-            abi.encode(implementation)
+            abi.encode(implementationAddress)
         );
     }
 
