@@ -39,7 +39,6 @@ contract EOAValidator is IK1Validator {
         );
 
         signer = ECDSA.recover(messageHash, signature);
-        require(signer != address(0), "EOAValidator: invalid signature");
     }
 
     /// @inheritdoc IERC165
