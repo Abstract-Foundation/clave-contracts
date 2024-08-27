@@ -83,9 +83,9 @@ export async function prepareTeeTx(
 
     const signedTxHash = EIP712Signer.getSignedDigest(tx);
 
-    const abiCoder = ethers.AbiCoder.defaultAbiCoder();
-    let signature = sign(signedTxHash.toString(), keyPair);
+    let signature = await sign(signedTxHash.toString(), keyPair);
 
+    const abiCoder = ethers.AbiCoder.defaultAbiCoder();
     signature = abiCoder.encode(
         ['bytes', 'address', 'bytes[]'],
         [signature, validatorAddress, hookData],
@@ -139,7 +139,7 @@ export async function prepareBatchTx(
 
     const signedTxHash = EIP712Signer.getSignedDigest(tx);
 
-    let signature = sign(signedTxHash.toString(), keyPair);
+    let signature = await sign(signedTxHash.toString(), keyPair);
 
     signature = abiCoder.encode(
         ['bytes', 'address', 'bytes[]'],
