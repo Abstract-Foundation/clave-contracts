@@ -13,10 +13,11 @@ contract EOAValidator is IK1Validator {
     bytes32 private constant SIGN_MESSAGE_TYPEHASH =
         keccak256("SignMessage(string details,bytes32 hash)");
 
-    bytes32 private immutable DOMAIN_SEPARATOR;
-
-    constructor() {
-        DOMAIN_SEPARATOR = keccak256(
+    function validateSignature(
+        bytes32 signedTxHash,
+        bytes calldata signature
+    ) external view returns (address signer) {
+        bytes32 domainSeparator = keccak256(
             abi.encode(
                 EIP712DOMAIN_TYPEHASH,
                 keccak256(bytes("zkSync")),
@@ -24,12 +25,7 @@ contract EOAValidator is IK1Validator {
                 block.chainid
             )
         );
-    }
 
-    function validateSignature(
-        bytes32 signedTxHash,
-        bytes calldata signature
-    ) external view returns (address signer) {
         bytes32 structHash = keccak256(
             abi.encode(
                 SIGN_MESSAGE_TYPEHASH,
@@ -39,13 +35,14 @@ contract EOAValidator is IK1Validator {
         );
 
         bytes32 messageHash = keccak256(
-            abi.encodePacked("\x19\x01", DOMAIN_SEPARATOR, structHash)
+            abi.encodePacked("\x19\x01", domainSeparator, structHash)
         );
 
         signer = ECDSA.recover(messageHash, signature);
         require(signer != address(0), "EOAValidator: invalid signature");
     }
 
+    /// @inheritdoc IERC165
     function supportsInterface(
         bytes4 interfaceId
     ) external pure override returns (bool) {
