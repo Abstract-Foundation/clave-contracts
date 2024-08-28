@@ -29,7 +29,9 @@ contract EOAValidator is IK1Validator, EIP712 {
     }
 
     /// @inheritdoc IERC165
-    function supportsInterface(bytes4 interfaceId) external pure override returns (bool) {
+    function supportsInterface(
+        bytes4 interfaceId
+    ) external pure override returns (bool) {
         return
             interfaceId == type(IK1Validator).interfaceId ||
             interfaceId == type(IERC165).interfaceId;

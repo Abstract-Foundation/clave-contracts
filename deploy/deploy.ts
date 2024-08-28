@@ -65,6 +65,14 @@ export default async function (): Promise<void> {
         silent: false,
     });
 
+    // Need this so the ClaveProxy artifact is valid
+    await deployContract(
+        hre,
+        'ClaveProxy',
+        [await implementation.getAddress()],
+        { wallet: fundingWallet, silent: true, noVerify: true },
+    );
+
     const accountProxyArtifact = await hre.zksyncEthers.loadArtifact('ClaveProxy');
     const bytecodeHash = utils.hashBytecode(accountProxyArtifact.bytecode);
     factory = await deployContract(
