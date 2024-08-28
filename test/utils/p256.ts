@@ -39,7 +39,7 @@ export function encodePublicKeyK1(key: elliptic.ec.KeyPair): string {
     return address;
 }
 
-export async function sign(msg: string, key: elliptic.ec.KeyPair): Promise<string> {
+export async function sign(msg: string, key: elliptic.ec.KeyPair, chainId: bigint, validatorAddress: string): Promise<string> {
     if (isSecp256k1(key.ec.curve)) {
         const privateKey = padToHex(key.getPrivate().toString(16), 64);
         const wallet = new ethers.Wallet(privateKey);
@@ -49,7 +49,8 @@ export async function sign(msg: string, key: elliptic.ec.KeyPair): Promise<strin
         const domain = {
             name: 'zkSync',
             version: '2',
-            chainId: "260",
+            chainId: chainId.toString(),
+            verifyingContract: validatorAddress,
         };
         
         const types = {
