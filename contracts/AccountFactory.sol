@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.17;
 
-import {DEPLOYER_SYSTEM_CONTRACT, IContractDeployer} from '@matterlabs/zksync-contracts/l2/system-contracts/Constants.sol';
-import {SystemContractsCaller} from '@matterlabs/zksync-contracts/l2/system-contracts/libraries/SystemContractsCaller.sol';
-import {Ownable} from '@openzeppelin/contracts/access/Ownable.sol';
+import {DEPLOYER_SYSTEM_CONTRACT, IContractDeployer} from "@matterlabs/zksync-contracts/l2/system-contracts/Constants.sol";
+import {SystemContractsCaller} from "@matterlabs/zksync-contracts/l2/system-contracts/libraries/SystemContractsCaller.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
-import {Errors} from './libraries/Errors.sol';
-import {IClaveRegistry} from './interfaces/IClaveRegistry.sol';
+import {Errors} from "./libraries/Errors.sol";
+import {IClaveRegistry} from "./interfaces/IClaveRegistry.sol";
 
 /**
  * @title Factory contract to create Clave accounts in zkSync Era
@@ -88,20 +88,21 @@ contract AccountFactory is Ownable {
         // }
 
         // Deploy the implementation contract
-        (bool success, bytes memory returnData) = SystemContractsCaller.systemCallWithReturndata(
-            uint32(gasleft()),
-            address(DEPLOYER_SYSTEM_CONTRACT),
-            uint128(0),
-            abi.encodeCall(
-                DEPLOYER_SYSTEM_CONTRACT.create2Account,
-                (
-                    salt,
-                    proxyBytecodeHash,
-                    abi.encode(implementationAddress),
-                    IContractDeployer.AccountAbstractionVersion.Version1
+        (bool success, bytes memory returnData) = SystemContractsCaller
+            .systemCallWithReturndata(
+                uint32(gasleft()),
+                address(DEPLOYER_SYSTEM_CONTRACT),
+                uint128(0),
+                abi.encodeCall(
+                    DEPLOYER_SYSTEM_CONTRACT.create2Account,
+                    (
+                        salt,
+                        proxyBytecodeHash,
+                        abi.encode(implementationAddress),
+                        IContractDeployer.AccountAbstractionVersion.Version1
+                    )
                 )
-            )
-        );
+            );
 
         if (!success) {
             revert Errors.DEPLOYMENT_FAILED();
@@ -113,7 +114,7 @@ contract AccountFactory is Ownable {
         // Initialize the account
         bool initializeSuccess;
 
-        assembly ('memory-safe') {
+        assembly ("memory-safe") {
             initializeSuccess := call(
                 gas(),
                 accountAddress,
@@ -160,7 +161,9 @@ contract AccountFactory is Ownable {
      * @notice Changes the implementation contract address
      * @param newImplementation address - Address of the new implementation contract
      */
-    function changeImplementation(address newImplementation) external onlyOwner {
+    function changeImplementation(
+        address newImplementation
+    ) external onlyOwner {
         implementationAddress = newImplementation;
 
         emit ImplementationChanged(newImplementation);
@@ -181,13 +184,16 @@ contract AccountFactory is Ownable {
      * @param salt bytes32 - Salt to be used for the account creation
      * @return accountAddress address - Address of the Clave account that would be created with the given salt
      */
-    function getAddressForSalt(bytes32 salt) external view returns (address accountAddress) {
-        accountAddress = IContractDeployer(DEPLOYER_SYSTEM_CONTRACT).getNewAddressCreate2(
-            address(this),
-            proxyBytecodeHash,
-            salt,
-            abi.encode(implementationAddress)
-        );
+    function getAddressForSalt(
+        bytes32 salt
+    ) external view returns (address accountAddress) {
+        accountAddress = IContractDeployer(DEPLOYER_SYSTEM_CONTRACT)
+            .getNewAddressCreate2(
+                address(this),
+                proxyBytecodeHash,
+                salt,
+                abi.encode(implementationAddress)
+            );
     }
 
     /**
@@ -200,11 +206,12 @@ contract AccountFactory is Ownable {
         bytes32 salt,
         address _implementation
     ) external view returns (address accountAddress) {
-        accountAddress = IContractDeployer(DEPLOYER_SYSTEM_CONTRACT).getNewAddressCreate2(
-            address(this),
-            proxyBytecodeHash,
-            salt,
-            abi.encode(_implementation)
-        );
+        accountAddress = IContractDeployer(DEPLOYER_SYSTEM_CONTRACT)
+            .getNewAddressCreate2(
+                address(this),
+                proxyBytecodeHash,
+                salt,
+                abi.encode(_implementation)
+            );
     }
 }
