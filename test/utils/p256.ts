@@ -41,25 +41,24 @@ export function encodePublicKeyK1(key: elliptic.ec.KeyPair): string {
 
 export function sign(msg: string, key: elliptic.ec.KeyPair): string {
     if (isSecp256k1(key.ec.curve)) {
-        // For secp256k1, use ethers.js for EIP-191 signing
         const privateKey = padToHex(key.getPrivate().toString(16), 64);
         const wallet = new ethers.Wallet(privateKey);
         
-        // Remove '0x' prefix if present
-        const cleanMsg = msg.startsWith('0x') ? msg.slice(2) : msg;
+        // Hash the message if it's not already a 32-byte hash
+        let messageHash;
+        if (msg.length === 66 && msg.startsWith('0x')) {
+            // If msg is already a 32-byte hash, use it directly
+            messageHash = msg;
+        } else {
+            // If not, hash it as per Ethereum signed message format
+            messageHash = ethers.hashMessage(ethers.toUtf8Bytes(msg));
+        }
         
-        // Sign the message using ethers.js v6 (this applies EIP-191 automatically)
-        const signature = wallet.signMessageSync(ethers.getBytes('0x' + cleanMsg));
+        // Sign the hash
+        const signature = wallet.signingKey.sign(messageHash);
         
-        // Split the signature
-        const { r, s, v } = ethers.Signature.from(signature);
-        
-        // Format the signature parts
-        const rHex = padToHex(r.slice(2), 64);  // remove '0x' and pad
-        const sHex = padToHex(s.slice(2), 64);  // remove '0x' and pad
-        const vHex = padToHex(v.toString(16), 2);
-        
-        return `0x${rHex}${sHex}${vHex}`;
+        // Format the signature
+        return ethers.Signature.from(signature).serialized;
     } else {
         // For non-secp256k1, directly sign the message
         const signatureBuffer = Buffer.from(msg.slice(2), 'hex');
