@@ -14,7 +14,7 @@ import {EIP712} from '../helpers/EIP712.sol';
  */
 abstract contract ERC1271Handler is
     IERC1271Upgradeable,
-    EIP712('Clave1271', '1.0.0'),
+    EIP712('AbstractGlobalWallet', '1.0.0'),
     ValidationHandler
 {
     struct ClaveMessage {
