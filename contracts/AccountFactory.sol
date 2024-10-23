@@ -20,7 +20,9 @@ contract AccountFactory is Ownable {
     // Account creation bytecode hash
     bytes32 public proxyBytecodeHash;
     // Account authorized to deploy Clave accounts
-    address private _deployer;
+    address public deployer;
+    // Mapping to store the deployer of each account
+    mapping (address => address) public accountToDeployer;
 
     /**
      * @notice Event emmited when a new Clave account is created
@@ -57,18 +59,18 @@ contract AccountFactory is Ownable {
      * @param _implementation address     - Address of the implementation contract
      * @param _registry address           - Address of the registry contract
      * @param _proxyBytecodeHash address - Hash of the bytecode of the clave proxy contract
-     * @param deployer address           - Address of the account authorized to deploy Clave accounts
+     * @param _deployer address           - Address of the account authorized to deploy Clave accounts
      */
     constructor(
         address _implementation,
         address _registry,
         bytes32 _proxyBytecodeHash,
-        address deployer
+        address _deployer
     ) Ownable() {
         implementationAddress = _implementation;
         registry = _registry;
         proxyBytecodeHash = _proxyBytecodeHash;
-        _deployer = deployer;
+        deployer = _deployer;
     }
 
     /**
@@ -105,7 +107,9 @@ contract AccountFactory is Ownable {
 
         // Decode the account address
         (accountAddress) = abi.decode(returnData, (address));
-
+        // Store the deployer of the account
+        accountToDeployer[accountAddress] = msg.sender;
+        
         // Initialize the account
         bool initializeSuccess;
 
@@ -136,7 +140,7 @@ contract AccountFactory is Ownable {
      * @param accountAddress address - Address of the Clave account that was created
      */
     function claveAccountCreated(address accountAddress) external {
-        if (msg.sender != _deployer) {
+        if (msg.sender != deployer) {
             revert Errors.NOT_FROM_DEPLOYER();
         }
         emit ClaveAccountCreated(accountAddress);
@@ -147,7 +151,7 @@ contract AccountFactory is Ownable {
      * @param newDeployer address - Address of the new account authorized to deploy Clave accounts
      */
     function changeDeployer(address newDeployer) external onlyOwner {
-        _deployer = newDeployer;
+        deployer = newDeployer;
 
         emit DeployerChanged(newDeployer);
     }

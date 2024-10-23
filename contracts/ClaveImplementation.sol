@@ -22,6 +22,7 @@ import {ERC1271Handler} from './handlers/ERC1271Handler.sol';
 import {Call} from './batch/BatchCaller.sol';
 
 import {IClaveAccount} from './interfaces/IClave.sol';
+import {AccountFactory} from './AccountFactory.sol';
 
 /**
  * @title Main account contract for the Clave wallet infrastructure, forked for Abstract
@@ -63,7 +64,16 @@ contract ClaveImplementation is
         address initialK1Validator,
         bytes[] calldata modules,
         Call calldata initCall
-    ) external initializer {
+    ) public {
+        // check that this account is being deployed by the initial signer or the factory authorized deployer
+        AccountFactory factory = AccountFactory(msg.sender);
+        address thisDeployer = factory.accountToDeployer(address(this));
+        if (thisDeployer != factory.deployer()) {
+            if (initialK1Owner != thisDeployer) {
+                revert Errors.NOT_FROM_DEPLOYER();
+            }
+        }
+
         _k1AddOwner(initialK1Owner);
         _k1AddValidator(initialK1Validator);
 
