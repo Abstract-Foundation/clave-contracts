@@ -46,7 +46,7 @@ export class ClaveDeployer {
         return await deployContract(
             this.hre,
             CONTRACT_NAMES.REGISTRY,
-            undefined,
+            [this.deployerWallet.address],
             {
                 wallet: this.deployerWallet,
                 silent: true,
@@ -90,6 +90,7 @@ export class ClaveDeployer {
                 await implementation.getAddress(),
                 await registry.getAddress(),
                 bytecodeHash,
+                this.deployerWallet.address,
                 this.deployerWallet.address,
             ],
             {

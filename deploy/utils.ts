@@ -97,7 +97,7 @@ export const deployContract = async (
     contractArtifactName: string,
     constructorArguments?: Array<unknown>,
     options?: DeployContractOptions,
-    deploymentType: DeploymentType = 'create',
+    deploymentType?: DeploymentType,
     
 ): Promise<ethers.Contract> => {
     const log = (message: string): void => {
