@@ -6,41 +6,29 @@
 import type { ec } from 'elliptic';
 import {
     ZeroAddress,
-    parseEther,
     zeroPadValue
 } from 'ethers';
 import * as hre from 'hardhat';
-import { Contract, Provider, Wallet, utils } from 'zksync-ethers';
-import { LOCAL_RICH_WALLETS, deployContract, getWallet, verifyContract } from '../deploy/utils';
+import { Contract, Wallet, utils } from 'zksync-ethers';
+import { deployContract, getWallet, verifyContract } from '../deploy/utils';
 import type { CallStruct } from '../typechain-types/contracts/batch/BatchCaller';
-import { genKeyK1, encodePublicKeyK1 } from '../test/utils/p256';
-let provider: Provider;
 let fundingWallet: Wallet;
-let keyPair: ec.KeyPair;
 
 let batchCaller: Contract;
 let eoaValidator: Contract;
 let implementation: Contract;
 let factory: Contract;
-let account: Contract;
 let registry: Contract;
 
 // An example of a basic deploy script
 // Do not push modifications to this file
 // Just modify, interact then revert changes
 export default async function (): Promise<void> {
-    provider = new Provider(hre.network.config.url, undefined, {
-        cacheTimeout: -1,
-    });
-
     fundingWallet = getWallet(hre);
 
-    keyPair = genKeyK1();
-    const publicKey = encodePublicKeyK1(keyPair);
+    const initialOwner = fundingWallet.address;
 
-    console.log("authorized signer", publicKey);
-
-    batchCaller = await deployContract(hre, 'BatchCaller', undefined, {
+     await deployContract(hre, 'BatchCaller', undefined, {
         wallet: fundingWallet,
         silent: false,
     });
@@ -60,7 +48,10 @@ export default async function (): Promise<void> {
         },
     );
 
-    registry = await deployContract(hre, 'ClaveRegistry', undefined, {
+    registry = await deployContract(hre, 'ClaveRegistry',
+        [
+            initialOwner,
+        ], {
         wallet: fundingWallet,
         silent: false,
     });
@@ -83,6 +74,7 @@ export default async function (): Promise<void> {
             await registry.getAddress(),
             bytecodeHash,
             fundingWallet.address,
+            initialOwner,
         ],
         {
             wallet: fundingWallet,
@@ -91,7 +83,7 @@ export default async function (): Promise<void> {
     );
     await registry.setFactory(await factory.getAddress());
 
-    const salt = hre.ethers.randomBytes(32);
+    const abiCoder = hre.ethers.AbiCoder.defaultAbiCoder();
     const call: CallStruct = {
         target: ZeroAddress,
         allowFailure: false,
@@ -99,7 +91,8 @@ export default async function (): Promise<void> {
         callData: '0x',
     };
 
-    const abiCoder = hre.ethers.AbiCoder.defaultAbiCoder();
+    const salt = initialOwner.padEnd(66, '0');
+    console.log("salt", salt);
     const initializer =
         '0xb4e581f5' +
         abiCoder
@@ -111,7 +104,7 @@ export default async function (): Promise<void> {
                     'tuple(address target,bool allowFailure,uint256 value,bytes calldata)',
                 ],
                 [
-                    publicKey,
+                    initialOwner,
                     await eoaValidator.getAddress(),
                     [],
                     [call.target, call.allowFailure, call.value, call.callData],
