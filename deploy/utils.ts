@@ -133,7 +133,7 @@ export const deployContract = async (
     await verifyEnoughBalance(wallet, deploymentFee);
 
     // Deploy the contract to zkSync
-    const contract = await deployer.deploy(artifact, constructorArguments);
+    const contract = await deployer.deploy(artifact, constructorArguments, 'create2');
     const address = await contract.getAddress();
     const constructorArgs =
         contract.interface.encodeDeploy(constructorArguments);
