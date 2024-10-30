@@ -3,13 +3,12 @@
  * Unauthorized copying of this file, via any medium is strictly prohibited
  * Proprietary and confidential
  */
-import type { ec } from 'elliptic';
 import {
     ZeroAddress,
     zeroPadValue
 } from 'ethers';
 import * as hre from 'hardhat';
-import { Contract, Provider, Wallet, utils } from 'zksync-ethers';
+import { Contract, Wallet, utils } from 'zksync-ethers';
 import { deployContract, getWallet, verifyContract } from '../deploy/utils';
 import type { CallStruct } from '../typechain-types/contracts/batch/BatchCaller';
 let fundingWallet: Wallet;
@@ -127,17 +126,4 @@ export default async function (): Promise<void> {
         bytecode: accountProxyArtifact.bytecode
     })
     console.log("accountAddress", accountAddress)
-
-    // account = new Contract(
-    //     accountAddress,
-    //     implementation.interface,
-    //     fundingWallet,
-    // );
-    // // 0.0001 ETH transfered to Account
-    // await (
-    //     await fundingWallet.sendTransaction({
-    //         to: await account.getAddress(),
-    //         value: parseEther('0.0001'),
-    //     })
-    // ).wait();
 }
