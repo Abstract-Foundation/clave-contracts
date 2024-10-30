@@ -64,7 +64,7 @@ contract ClaveImplementation is
         address initialK1Validator,
         bytes[] calldata modules,
         Call calldata initCall
-    ) public {
+    ) public initializer {
         __ERC1271Handler_init();
         // check that this account is being deployed by the initial signer or the factory authorized deployer
         AccountFactory factory = AccountFactory(msg.sender);
