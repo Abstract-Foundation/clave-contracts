@@ -3,20 +3,7 @@ on:
   push:
     branches:
       - main
-    paths:
-      - "portal-api/**"
-      - ".github/workflows/portal-api*.yaml"
-      - "deployment/**"
   pull_request:
-    branches:
-      - main
-    paths:
-      - "portal-api/**"
-      - ".github/workflows/portal-api*.yaml"
-
-defaults:
-  run:
-    working-directory: portal-api
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref_name }}
