@@ -3,7 +3,6 @@
  * Unauthorized copying of this file, via any medium is strictly prohibited
  * Proprietary and confidential
  */
-import type { ec } from 'elliptic';
 import {
     ZeroAddress,
     zeroPadValue
@@ -28,12 +27,12 @@ export default async function (): Promise<void> {
 
     const initialOwner = fundingWallet.address;
 
-     await deployContract(hre, 'BatchCaller', undefined, {
+    batchCaller = await deployContract(hre, 'BatchCaller', undefined, 'create2', {
         wallet: fundingWallet,
         silent: false,
     });
 
-    eoaValidator = await deployContract(hre, 'EOAValidator', undefined, {
+    eoaValidator = await deployContract(hre, 'EOAValidator', undefined, 'create2', {
         wallet: fundingWallet,
         silent: false,
     });
@@ -42,6 +41,7 @@ export default async function (): Promise<void> {
         hre,
         'ClaveImplementation',
         [await batchCaller.getAddress()],
+        'create2',
         {
             wallet: fundingWallet,
             silent: false,
@@ -51,9 +51,9 @@ export default async function (): Promise<void> {
     registry = await deployContract(hre, 'ClaveRegistry',
         [
             initialOwner,
-        ], {
-        wallet: fundingWallet,
-        silent: false,
+        ],
+        'create2',
+        { wallet: fundingWallet, silent: false,
     });
 
     // Need this so the ClaveProxy artifact is valid
@@ -61,6 +61,7 @@ export default async function (): Promise<void> {
         hre,
         'ClaveProxy',
         [await implementation.getAddress()],
+        'create2',
         { wallet: fundingWallet, silent: true, noVerify: true },
     );
 
@@ -76,6 +77,7 @@ export default async function (): Promise<void> {
             fundingWallet.address,
             initialOwner,
         ],
+        'create2',
         {
             wallet: fundingWallet,
             silent: false,
@@ -92,7 +94,6 @@ export default async function (): Promise<void> {
     };
 
     const salt = initialOwner.padEnd(66, '0');
-    console.log("salt", salt);
     const initializer =
         '0xb4e581f5' +
         abiCoder
