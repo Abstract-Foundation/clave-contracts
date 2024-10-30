@@ -4,7 +4,7 @@
  * Proprietary and confidential
  */
 import { expect } from 'chai';
-import { parseEther } from 'ethers';
+import { HDNodeWallet, parseEther } from 'ethers';
 import * as hre from 'hardhat';
 import type { Contract, Wallet } from 'zksync-ethers';
 import { Provider, utils } from 'zksync-ethers';
@@ -13,21 +13,25 @@ import { LOCAL_RICH_WALLETS, getWallet } from '../../deploy/utils';
 import type { CallStruct } from '../../typechain-types/contracts/batch/BatchCaller';
 import { ClaveDeployer } from '../utils/deployer';
 import { fixture } from '../utils/fixture';
-import { PAYMASTERS } from '../utils/names';
+import { PAYMASTERS, VALIDATORS } from '../utils/names';
 import { getERC20PaymasterInput, getOraclePayload } from '../utils/paymasters';
 import {
     ethTransfer,
-    prepareMockBatchTx,
-    prepareMockTx,
+    prepareBatchTx,
+    prepareEOATx,
 } from '../utils/transactions';
+import { ec } from 'elliptic';
 
-describe('Clave Contracts - Paymaster tests', () => {
+describe('Clave Contracts - ERC-20 Paymaster tests', () => {
     let deployer: ClaveDeployer;
     let provider: Provider;
     let richWallet: Wallet;
     let batchCaller: Contract;
+    let eoaValidator: Contract;
     let mockValidator: Contract;
     let account: Contract;
+    let keyPair: ec.KeyPair;
+    let wallet: HDNodeWallet;
 
     let erc20Paymaster: Contract;
     let erc20: Contract;
@@ -39,7 +43,10 @@ describe('Clave Contracts - Paymaster tests', () => {
             cacheTimeout: -1,
         });
 
-        [batchCaller, , , , mockValidator, account] = await fixture(deployer);
+        ({ batchCaller, eoaValidator, mockValidator, account, wallet, keyPair } = await fixture(
+            deployer,
+            VALIDATORS.EOA,
+        ));
 
         const accountAddress = await account.getAddress();
 
@@ -116,11 +123,13 @@ describe('Clave Contracts - Paymaster tests', () => {
             const amount = parseEther('1');
 
             const txData = ethTransfer(richAddress, amount);
-            const tx = await prepareMockTx(
+            const tx = await prepareEOATx(
                 provider,
                 account,
                 txData,
-                await mockValidator.getAddress(),
+                await eoaValidator.getAddress(),
+                wallet,
+                undefined,
                 getERC20PaymasterInput(
                     paymasterAddress,
                     await erc20.getAddress(),
@@ -176,11 +185,13 @@ describe('Clave Contracts - Paymaster tests', () => {
                     amount,
                 ]),
             };
-            const tx = await prepareMockTx(
+            const tx = await prepareEOATx(
                 provider,
                 account,
                 txData,
-                await mockValidator.getAddress(),
+                await eoaValidator.getAddress(),
+                wallet,
+                undefined,
                 getERC20PaymasterInput(
                     paymasterAddress,
                     await erc20.getAddress(),
@@ -237,19 +248,21 @@ describe('Clave Contracts - Paymaster tests', () => {
                 },
             ];
 
-            const batchTx = await prepareMockBatchTx(
+            const batchTx = await prepareBatchTx(
                 provider,
                 account,
                 await batchCaller.getAddress(),
                 calls,
-                await mockValidator.getAddress(),
-                [],
+                await eoaValidator.getAddress(),
+                keyPair,
+                undefined,
                 getERC20PaymasterInput(
                     paymasterAddress,
                     await erc20.getAddress(),
                     parseEther('50'),
                     await getOraclePayload(erc20Paymaster),
                 ),
+                wallet,
             );
 
             const txReceipt = await provider.broadcastTransaction(

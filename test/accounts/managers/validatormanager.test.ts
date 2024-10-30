@@ -19,15 +19,19 @@ import {
     removeR1Validator,
 } from '../../utils/managers/validatormanager';
 import { VALIDATORS } from '../../utils/names';
-import { ethTransfer, prepareMockTx } from '../../utils/transactions';
+import { ethTransfer, prepareTeeTx } from '../../utils/transactions';
+import { encodePublicKey } from '../../utils/p256';
+import { addR1Key } from '../../utils/managers/ownermanager';
 
 describe('Clave Contracts - Validator Manager tests', () => {
     let deployer: ClaveDeployer;
     let provider: Provider;
     let richWallet: Wallet;
     let eoaValidator: Contract;
+    let teeValidator: Contract;
     let account: Contract;
     let wallet: HDNodeWallet;
+    let keyPair: ec.KeyPair;
 
     before(async () => {
         richWallet = getWallet(hre, LOCAL_RICH_WALLETS[0].privateKey);
@@ -36,7 +40,7 @@ describe('Clave Contracts - Validator Manager tests', () => {
             cacheTimeout: -1,
         });
 
-        ({eoaValidator, account, wallet} = await fixture(
+        ({ eoaValidator, teeValidator, account, wallet, keyPair } = await fixture(
             deployer,
             VALIDATORS.EOA,
         ));
@@ -54,11 +58,9 @@ describe('Clave Contracts - Validator Manager tests', () => {
         });
 
         describe('Full tests with r1 validator type, adding-removing-validating', () => {
-            let newR1Validator: Contract;
 
             it('should add a new r1 validator', async () => {
-                newR1Validator = await deployer.validator(VALIDATORS.MOCK);
-                const validatorAddress = await newR1Validator.getAddress();
+                const validatorAddress = await teeValidator.getAddress();
 
                 expect(await account.r1IsValidator(validatorAddress)).to.be
                     .false;
@@ -67,7 +69,15 @@ describe('Clave Contracts - Validator Manager tests', () => {
                     provider,
                     account,
                     eoaValidator,
-                    newR1Validator,
+                    teeValidator,
+                    wallet,
+                );
+
+                await addR1Key(
+                    provider,
+                    account,
+                    eoaValidator,
+                    encodePublicKey(keyPair),
                     wallet,
                 );
 
@@ -90,18 +100,27 @@ describe('Clave Contracts - Validator Manager tests', () => {
             });
 
             it('should send a tx with the new r1 validator', async () => {
+
+                const validatorAddress = await teeValidator.getAddress();
+
                 const amount = parseEther('1');
                 const richAddress = await richWallet.getAddress();
                 const richBalanceBefore = await provider.getBalance(
                     richAddress,
                 );
 
+                expect(await account.r1IsValidator(validatorAddress)).to.be.true;
+                expect(await account.r1ListValidators()).to.deep.eq([
+                    validatorAddress,
+                ]);
+
                 const txData = ethTransfer(richAddress, amount);
-                const tx = await prepareMockTx(
+                const tx = await prepareTeeTx(
                     provider,
                     account,
                     txData,
-                    await newR1Validator.getAddress(),
+                    await teeValidator.getAddress(),
+                    keyPair,
                 );
                 const txReceipt = await provider.broadcastTransaction(
                     utils.serializeEip712(tx),
@@ -115,7 +134,7 @@ describe('Clave Contracts - Validator Manager tests', () => {
             });
 
             it('should remove the new r1 validator', async () => {
-                const validatorAddress = await newR1Validator.getAddress();
+                const validatorAddress = await teeValidator.getAddress();
                 expect(await account.r1IsValidator(validatorAddress)).to.be
                     .true;
 
@@ -123,7 +142,7 @@ describe('Clave Contracts - Validator Manager tests', () => {
                     provider,
                     account,
                     eoaValidator,
-                    newR1Validator,
+                    teeValidator,
                     wallet,
                 );
 

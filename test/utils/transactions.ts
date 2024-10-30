@@ -165,6 +165,7 @@ export async function prepareBatchTx(
     keyPair: ec.KeyPair,
     hookData: Array<ethers.BytesLike> = [],
     paymasterParams?: types.PaymasterParams,
+    wallet?: HDNodeWallet,
 ): Promise<types.TransactionLike> {
     const abiCoder = ethers.AbiCoder.defaultAbiCoder();
     const data =
@@ -201,7 +202,12 @@ export async function prepareBatchTx(
 
     const signedTxHash = EIP712Signer.getSignedDigest(tx);
 
-    let signature = sign(sha256(signedTxHash.toString()), keyPair);
+    let signature: string;
+    if (wallet) {
+        signature = wallet.signingKey.sign(signedTxHash).serialized;
+    } else {
+        signature = sign(sha256(signedTxHash.toString()), keyPair);
+    }
 
     signature = abiCoder.encode(
         ['bytes', 'address', 'bytes[]'],
