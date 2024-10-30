@@ -5,7 +5,7 @@
  */
 import { assert, expect } from 'chai';
 import type { ec } from 'elliptic';
-import { AbiCoder } from 'ethers';
+import { AbiCoder, HDNodeWallet } from 'ethers';
 import * as hre from 'hardhat';
 import type { Contract } from 'zksync-ethers';
 import { Provider, Wallet } from 'zksync-ethers';
@@ -22,13 +22,16 @@ import {
     stopRecovery,
     updateCloudGuardian,
 } from '../../utils/recovery/recovery';
+import { addR1Validator } from '../../utils/managers/validatormanager';
 
 describe('Clave Contracts - Cloud Recovery tests', () => {
     let deployer: ClaveDeployer;
     let provider: Provider;
     let richWallet: Wallet;
+    let eoaValidator: Contract
     let teeValidator: Contract;
     let account: Contract;
+    let wallet: HDNodeWallet;
     let keyPair: ec.KeyPair;
 
     let cloudRecoveryModule: Contract;
@@ -40,14 +43,22 @@ describe('Clave Contracts - Cloud Recovery tests', () => {
             cacheTimeout: -1,
         });
 
-        [, , , , teeValidator, account, keyPair] = await fixture(
+        ({ eoaValidator, teeValidator, account, wallet, keyPair } = await fixture(
             deployer,
-            VALIDATORS.TEE,
-        );
+            VALIDATORS.EOA,
+        ));
 
         const accountAddress = await account.getAddress();
 
         await deployer.fund(10000, accountAddress);
+
+        await addR1Validator(
+            provider,
+            account,
+            eoaValidator,
+            teeValidator,
+            wallet,
+        );
 
         cloudRecoveryModule = await deployer.deployCustomContract(
             'CloudRecoveryModule',
@@ -87,10 +98,10 @@ describe('Clave Contracts - Cloud Recovery tests', () => {
                 await addModule(
                     provider,
                     account,
-                    teeValidator,
+                    eoaValidator,
                     cloudRecoveryModule,
                     initData,
-                    keyPair,
+                    wallet,
                 );
                 expect(
                     await account.isModule(
@@ -127,8 +138,9 @@ describe('Clave Contracts - Cloud Recovery tests', () => {
                     ),
                 ).to.be.false;
 
-                expect(await account.r1ListOwners()).to.deep.eq([
-                    encodePublicKey(keyPair),
+                expect(await account.r1ListOwners()).to.deep.eq([]);
+                expect(await account.k1ListOwners()).to.deep.eq([
+                    wallet.address
                 ]);
 
                 await startCloudRecovery(
@@ -152,8 +164,9 @@ describe('Clave Contracts - Cloud Recovery tests', () => {
                     ),
                 ).to.be.true;
 
-                expect(await account.r1ListOwners()).to.deep.eq([
-                    encodePublicKey(keyPair),
+                expect(await account.r1ListOwners()).to.deep.eq([]);
+                expect(await account.k1ListOwners()).to.deep.eq([
+                    wallet.address
                 ]);
 
                 await executeRecovery(account, cloudRecoveryModule);
@@ -167,6 +180,7 @@ describe('Clave Contracts - Cloud Recovery tests', () => {
                 expect(await account.r1ListOwners()).to.deep.eq([
                     encodePublicKey(newKeyPair),
                 ]);
+                expect(await account.k1ListOwners()).to.deep.eq([]);
             });
         });
 
@@ -217,9 +231,9 @@ describe('Clave Contracts - Cloud Recovery tests', () => {
                         provider,
                         account,
                         cloudRecoveryModule,
-                        teeValidator,
+                        eoaValidator,
                         await newGuardianAddress.getAddress(),
-                        keyPair,
+                        wallet,
                     );
                     assert(false, 'Should revert');
                 } catch (err) {}
@@ -247,6 +261,7 @@ describe('Clave Contracts - Cloud Recovery tests', () => {
                     account,
                     cloudRecoveryModule,
                     teeValidator,
+                    wallet,
                     newKeyPair,
                 );
 

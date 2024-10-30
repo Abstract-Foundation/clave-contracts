@@ -20,7 +20,7 @@ describe('Clave Contracts - Module Manager tests', () => {
     let deployer: ClaveDeployer;
     let provider: Provider;
     let richWallet: Wallet;
-    let teeValidator: Contract;
+    let eoaValidator: Contract;
     let account: Contract;
     let wallet: HDNodeWallet;
 
@@ -31,10 +31,10 @@ describe('Clave Contracts - Module Manager tests', () => {
             cacheTimeout: -1,
         });
 
-        [, , , , teeValidator, account, wallet] = await fixture(
+        ({eoaValidator, account, wallet} = await fixture(
             deployer,
             VALIDATORS.EOA,
-        );
+        ));
 
         const accountAddress = await account.getAddress();
 
@@ -64,7 +64,7 @@ describe('Clave Contracts - Module Manager tests', () => {
                 await addModule(
                     provider,
                     account,
-                    teeValidator,
+                    eoaValidator,
                     mockModule,
                     initData,
                     wallet,
@@ -116,7 +116,7 @@ describe('Clave Contracts - Module Manager tests', () => {
                 await removeModule(
                     provider,
                     account,
-                    teeValidator,
+                    eoaValidator,
                     mockModule,
                     wallet,
                 );
@@ -164,7 +164,7 @@ describe('Clave Contracts - Module Manager tests', () => {
                 await addModule(
                     provider,
                     account,
-                    teeValidator,
+                    eoaValidator,
                     newMockModule,
                     initData,
                     wallet,
@@ -192,7 +192,7 @@ describe('Clave Contracts - Module Manager tests', () => {
                     provider,
                     account,
                     addModuleTx,
-                    await teeValidator.getAddress(),
+                    await eoaValidator.getAddress(),
                     wallet,
                 );
 
@@ -216,7 +216,7 @@ describe('Clave Contracts - Module Manager tests', () => {
                     await addModule(
                         provider,
                         account,
-                        teeValidator,
+                        eoaValidator,
                         new Contract(await noInterfaceModule.getAddress(), []),
                         initData,
                         wallet,

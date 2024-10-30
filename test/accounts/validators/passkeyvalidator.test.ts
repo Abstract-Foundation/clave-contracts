@@ -5,7 +5,7 @@
  */
 import { assert, expect } from 'chai';
 import type { ec } from 'elliptic';
-import { parseEther } from 'ethers';
+import { HDNodeWallet, parseEther } from 'ethers';
 import * as hre from 'hardhat';
 import { Provider, Wallet, utils } from 'zksync-ethers';
 import type { Contract } from 'zksync-ethers';
@@ -20,13 +20,18 @@ import {
     prepareMockTx,
     preparePasskeyTx,
 } from '../../utils/transactions';
+import { addR1Validator } from '../../utils/managers/validatormanager';
+import { encodePublicKey, genKey } from '../../utils/p256';
+import { addR1Key } from '../../utils/managers/ownermanager';
 
 describe('Clave Contracts - Passkey Validator tests', () => {
     let deployer: ClaveDeployer;
     let provider: Provider;
     let richWallet: Wallet;
     let passkeyValidator: Contract;
+    let eoaValidator: Contract;
     let account: Contract;
+    let wallet: HDNodeWallet;
     let keyPair: ec.KeyPair;
 
     before(async () => {
@@ -36,14 +41,33 @@ describe('Clave Contracts - Passkey Validator tests', () => {
             cacheTimeout: -1,
         });
 
-        [, , , , passkeyValidator, account, keyPair] = await fixture(
+        ({ eoaValidator, passkeyValidator, account, wallet } = await fixture(
             deployer,
-            VALIDATORS.PASSKEY,
-        );
+            VALIDATORS.EOA
+        ));
 
         const accountAddress = await account.getAddress();
 
         await deployer.fund(10000, accountAddress);
+
+        await addR1Validator(
+            provider,
+            account,
+            eoaValidator,
+            passkeyValidator,
+            wallet,
+        );
+
+        keyPair = genKey();
+        const newPublicKey = encodePublicKey(keyPair)
+
+        await addR1Key(
+            provider,
+            account,
+            eoaValidator,
+            newPublicKey,
+            wallet,
+        );
     });
 
     describe('PasskeyValidator', () => {

@@ -4,7 +4,7 @@
  * Proprietary and confidential
  */
 import { expect } from 'chai';
-import { parseEther } from 'ethers';
+import { HDNodeWallet, parseEther } from 'ethers';
 import * as hre from 'hardhat';
 import type { Contract, Wallet } from 'zksync-ethers';
 import { Provider, utils } from 'zksync-ethers';
@@ -15,16 +15,20 @@ import { ClaveDeployer } from '../utils/deployer';
 import { fixture } from '../utils/fixture';
 import {
     ethTransfer,
-    prepareMockBatchTx,
-    prepareMockTx,
+    prepareBatchTx,
+    prepareEOATx,
 } from '../utils/transactions';
+import { VALIDATORS } from '../utils/names';
+import { ec } from 'elliptic';
 
 describe('Clave Contracts - Account tests', () => {
     let deployer: ClaveDeployer;
     let provider: Provider;
     let richWallet: Wallet;
     let batchCaller: Contract;
-    let mockValidator: Contract;
+    let eoaValidator: Contract;
+    let keyPair: ec.KeyPair;
+    let wallet: HDNodeWallet;
     let account: Contract;
 
     let erc20: Contract;
@@ -36,7 +40,7 @@ describe('Clave Contracts - Account tests', () => {
             cacheTimeout: -1,
         });
 
-        [batchCaller, , , , mockValidator, account] = await fixture(deployer);
+        ({batchCaller, eoaValidator, account, wallet, keyPair} = await fixture(deployer, VALIDATORS.EOA))
 
         const accountAddress = await account.getAddress();
 
@@ -73,11 +77,12 @@ describe('Clave Contracts - Account tests', () => {
             const delta = parseEther('0.01');
 
             const txData = ethTransfer(richAddress, amount);
-            const tx = await prepareMockTx(
+            const tx = await prepareEOATx(
                 provider,
                 account,
                 txData,
-                await mockValidator.getAddress(),
+                await eoaValidator.getAddress(),
+                wallet
             );
             const txReceipt = await provider.broadcastTransaction(
                 utils.serializeEip712(tx),
@@ -113,11 +118,12 @@ describe('Clave Contracts - Account tests', () => {
                     amount,
                 ]),
             };
-            const tx = await prepareMockTx(
+            const tx = await prepareEOATx(
                 provider,
                 account,
                 txData,
-                await mockValidator.getAddress(),
+                await eoaValidator.getAddress(),
+                wallet
             );
 
             const txReceipt = await provider.broadcastTransaction(
@@ -173,12 +179,16 @@ describe('Clave Contracts - Account tests', () => {
                 },
             ];
 
-            const batchTx = await prepareMockBatchTx(
+            const batchTx = await prepareBatchTx(
                 provider,
                 account,
                 await batchCaller.getAddress(),
                 calls,
-                await mockValidator.getAddress(),
+                await eoaValidator.getAddress(),
+                keyPair,
+                undefined,
+                undefined,
+                wallet
             );
 
             const txReceipt = await provider.broadcastTransaction(

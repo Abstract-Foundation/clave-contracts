@@ -226,7 +226,7 @@ export class ClaveDeployer {
     }
 
     public async fund(
-        ethAmount: number,
+        ethAmount: number | string,
         accountAddress: string,
     ): Promise<void> {
         await (

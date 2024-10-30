@@ -7,25 +7,38 @@ import type { ec } from 'elliptic';
 import type { Contract, Provider } from 'zksync-ethers';
 import { utils } from 'zksync-ethers';
 
-import { prepareTeeTx } from '../transactions';
+import { prepareEOATx, prepareTeeTx } from '../transactions';
+import { HDNodeWallet, TransactionLike } from 'ethers';
 
 export async function addR1Validator(
     provider: Provider,
     account: Contract,
     validator: Contract,
     newR1Validator: Contract,
-    keyPair: ec.KeyPair,
+    wallet: HDNodeWallet,
+    keyPair?: ec.KeyPair,
 ): Promise<void> {
     const addValidatorTx = await account.r1AddValidator.populateTransaction(
         await newR1Validator.getAddress(),
     );
-    const tx = await prepareTeeTx(
+    let tx: TransactionLike;
+    if (keyPair) {
+        tx = await prepareTeeTx(
         provider,
         account,
         addValidatorTx,
         await validator.getAddress(),
         keyPair,
     );
+    } else {
+        tx = await prepareEOATx(
+            provider,
+            account,
+            addValidatorTx,
+            await validator.getAddress(),
+            wallet,
+        );
+    }
     const txReceipt = await provider.broadcastTransaction(
         utils.serializeEip712(tx),
     );
@@ -37,18 +50,18 @@ export async function removeR1Validator(
     account: Contract,
     validator: Contract,
     removingR1Validator: Contract,
-    keyPair: ec.KeyPair,
+    wallet: HDNodeWallet,
 ): Promise<void> {
     const removeValidatorTx =
         await account.r1RemoveValidator.populateTransaction(
             removingR1Validator,
         );
-    const tx = await prepareTeeTx(
+    const tx = await prepareEOATx(
         provider,
         account,
         removeValidatorTx,
         await validator.getAddress(),
-        keyPair,
+        wallet,
     );
     const txReceipt = await provider.broadcastTransaction(
         utils.serializeEip712(tx),
@@ -61,17 +74,17 @@ export async function addK1Validator(
     account: Contract,
     validator: Contract,
     newK1Validator: Contract,
-    keyPair: ec.KeyPair,
+    wallet: HDNodeWallet,
 ): Promise<void> {
     const addValidatorTx = await account.k1AddValidator.populateTransaction(
         await newK1Validator.getAddress(),
     );
-    const tx = await prepareTeeTx(
+    const tx = await prepareEOATx(
         provider,
         account,
         addValidatorTx,
         await validator.getAddress(),
-        keyPair,
+        wallet,
     );
     const txReceipt = await provider.broadcastTransaction(
         utils.serializeEip712(tx),
@@ -84,18 +97,18 @@ export async function removeK1Validator(
     account: Contract,
     validator: Contract,
     removingK1Validator: Contract,
-    keyPair: ec.KeyPair,
+    wallet: HDNodeWallet,
 ): Promise<void> {
     const removeValidatorTx =
         await account.k1RemoveValidator.populateTransaction(
             removingK1Validator,
         );
-    const tx = await prepareTeeTx(
+    const tx = await prepareEOATx(
         provider,
         account,
         removeValidatorTx,
         await validator.getAddress(),
-        keyPair,
+        wallet,
     );
     const txReceipt = await provider.broadcastTransaction(
         utils.serializeEip712(tx),

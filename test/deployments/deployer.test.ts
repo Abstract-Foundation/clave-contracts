@@ -5,7 +5,7 @@
  */
 import { expect } from 'chai';
 import type { ec } from 'elliptic';
-import type { BytesLike } from 'ethers';
+import type { BytesLike, HDNodeWallet } from 'ethers';
 import { parseEther } from 'ethers';
 import * as hre from 'hardhat';
 import type { Contract, Wallet } from 'zksync-ethers';
@@ -14,7 +14,7 @@ import { Provider } from 'zksync-ethers';
 import { LOCAL_RICH_WALLETS, getWallet } from '../../deploy/utils';
 import { ClaveDeployer } from '../utils/deployer';
 import { fixture } from '../utils/fixture';
-import { encodePublicKey } from '../utils/p256';
+import { VALIDATORS } from '../utils/names';
 
 describe('Clave Contracts - Deployer class tests', () => {
     let deployer: ClaveDeployer;
@@ -24,8 +24,9 @@ describe('Clave Contracts - Deployer class tests', () => {
     let registry: Contract;
     let implementation: Contract;
     let factory: Contract;
-    let mockValidator: Contract;
+    let eoaValidator: Contract;
     let account: Contract;
+    let wallet: HDNodeWallet;
     let keyPair: ec.KeyPair;
 
     before(async () => {
@@ -35,15 +36,16 @@ describe('Clave Contracts - Deployer class tests', () => {
             cacheTimeout: -1,
         });
 
-        [
+        ({
             batchCaller,
             registry,
             implementation,
             factory,
-            mockValidator,
+            eoaValidator,
             account,
+            wallet,
             keyPair,
-        ] = await fixture(deployer);
+        } = await fixture(deployer, VALIDATORS.EOA));
 
         await deployer.fund(100, await account.getAddress());
     });
@@ -54,7 +56,7 @@ describe('Clave Contracts - Deployer class tests', () => {
             expect(await registry.getAddress()).not.to.be.undefined;
             expect(await implementation.getAddress()).not.to.be.undefined;
             expect(await factory.getAddress()).not.to.be.undefined;
-            expect(await mockValidator.getAddress()).not.to.be.undefined;
+            expect(await eoaValidator.getAddress()).not.to.be.undefined;
             expect(await account.getAddress()).not.to.be.undefined;
         });
     });
@@ -68,13 +70,13 @@ describe('Clave Contracts - Deployer class tests', () => {
         });
 
         it('account keeps correct states', async () => {
-            const validatorAddress = await mockValidator.getAddress();
+            const validatorAddress = await eoaValidator.getAddress();
             const implementationAddress = await implementation.getAddress();
 
-            const expectedR1Validators = [validatorAddress];
-            const expectedK1Validators: Array<BytesLike> = [];
-            const expectedR1Owners = [encodePublicKey(keyPair)];
-            const expectedK1Owners: Array<BytesLike> = [];
+            const expectedR1Validators: Array<BytesLike> = [];
+            const expectedK1Validators: Array<BytesLike> = [validatorAddress];
+            const expectedR1Owners: Array<BytesLike> = [];
+            const expectedK1Owners: Array<BytesLike> = [wallet.address];
             const expectedModules: Array<BytesLike> = [];
             const expectedHooks: Array<BytesLike> = [];
             const expectedImplementation = implementationAddress;
@@ -90,7 +92,7 @@ describe('Clave Contracts - Deployer class tests', () => {
             expect(await account.listModules()).to.deep.eq(expectedModules);
             expect(await account.listHooks(false)).to.deep.eq(expectedHooks);
             expect(await account.listHooks(true)).to.deep.eq(expectedHooks);
-            expect(await account.implementation()).to.eq(
+            expect(await account.implementationAddress()).to.eq(
                 expectedImplementation,
             );
         });

@@ -5,7 +5,7 @@
  */
 import { expect } from 'chai';
 import type { ec } from 'elliptic';
-import { AbiCoder, parseEther } from 'ethers';
+import { AbiCoder, HDNodeWallet, parseEther } from 'ethers';
 import * as hre from 'hardhat';
 import type { Contract } from 'zksync-ethers';
 import { Provider, Wallet, utils } from 'zksync-ethers';
@@ -23,14 +23,17 @@ import {
     updateSocialRecoveryConfig,
 } from '../../utils/recovery/recovery';
 import { ethTransfer, prepareTeeTx } from '../../utils/transactions';
+import { addR1Validator } from '../../utils/managers/validatormanager';
 
 describe('Clave Contracts - Social Recovery tests', () => {
     let deployer: ClaveDeployer;
     let provider: Provider;
     let richWallet: Wallet;
+    let eoaValidator: Contract;
     let teeValidator: Contract;
     let account: Contract;
     let keyPair: ec.KeyPair;
+    let wallet: HDNodeWallet;
 
     let socialRecoveryModule: Contract;
 
@@ -41,14 +44,22 @@ describe('Clave Contracts - Social Recovery tests', () => {
             cacheTimeout: -1,
         });
 
-        [, , , , teeValidator, account, keyPair] = await fixture(
+        ({ eoaValidator, teeValidator, account, wallet, keyPair } = await fixture(
             deployer,
-            VALIDATORS.TEE,
-        );
+            VALIDATORS.EOA,
+        ));
 
         const accountAddress = await account.getAddress();
 
         await deployer.fund(10000, accountAddress);
+
+        await addR1Validator(
+            provider,
+            account,
+            eoaValidator,
+            teeValidator,
+            wallet,
+        );
 
         socialRecoveryModule = await deployer.deployCustomContract(
             'SocialRecoveryModule',
@@ -93,10 +104,10 @@ describe('Clave Contracts - Social Recovery tests', () => {
                 await addModule(
                     provider,
                     account,
-                    teeValidator,
+                    eoaValidator,
                     socialRecoveryModule,
                     initData,
-                    keyPair,
+                    wallet,
                 );
                 expect(
                     await account.isModule(
@@ -131,9 +142,9 @@ describe('Clave Contracts - Social Recovery tests', () => {
                     provider,
                     account,
                     socialRecoveryModule,
-                    teeValidator,
+                    eoaValidator,
                     [1, 1, [await secondGuardian.getAddress()]],
-                    keyPair,
+                    wallet,
                 );
 
                 const guardians = await socialRecoveryModule.getGuardians(
@@ -149,7 +160,7 @@ describe('Clave Contracts - Social Recovery tests', () => {
                     provider,
                     account,
                     socialRecoveryModule,
-                    teeValidator,
+                    eoaValidator,
                     [
                         1,
                         1,
@@ -158,7 +169,7 @@ describe('Clave Contracts - Social Recovery tests', () => {
                             await secondGuardian.getAddress(),
                         ],
                     ],
-                    keyPair,
+                    wallet,
                 );
 
                 const guardians = await socialRecoveryModule.getGuardians(
@@ -179,9 +190,10 @@ describe('Clave Contracts - Social Recovery tests', () => {
                     await socialRecoveryModule.isRecovering(accountAddress);
                 expect(isRecoveringBefore).to.be.false;
 
-                expect(await account.r1ListOwners()).to.deep.eq([
-                    encodePublicKey(keyPair),
+                expect(await account.k1ListOwners()).to.deep.eq([
+                    wallet.address
                 ]);
+                expect(await account.r1ListOwners()).to.deep.eq([]);
 
                 await startSocialRecovery(
                     socialGuardian,
@@ -206,8 +218,8 @@ describe('Clave Contracts - Social Recovery tests', () => {
                     provider,
                     account,
                     socialRecoveryModule,
-                    teeValidator,
-                    keyPair,
+                    eoaValidator,
+                    wallet,
                 );
 
                 const isRecoveringAfter =
@@ -233,9 +245,10 @@ describe('Clave Contracts - Social Recovery tests', () => {
                     await socialRecoveryModule.isRecovering(accountAddress);
                 expect(isRecoveringAfter).to.be.true;
 
-                expect(await account.r1ListOwners()).to.deep.eq([
-                    encodePublicKey(keyPair),
+                expect(await account.k1ListOwners()).to.deep.eq([
+                    wallet.address
                 ]);
+                expect(await account.r1ListOwners()).to.deep.eq([]);
 
                 await executeRecovery(account, socialRecoveryModule);
 
@@ -246,6 +259,7 @@ describe('Clave Contracts - Social Recovery tests', () => {
                 expect(await account.r1ListOwners()).to.deep.eq([
                     encodePublicKey(newKeyPair),
                 ]);
+                expect(await account.k1ListOwners()).to.deep.eq([]);
             });
 
             it('should send tx with new keys after recovery', async () => {

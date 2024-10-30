@@ -20,7 +20,7 @@ describe('Clave Contracts - Upgrade Manager tests', () => {
     let deployer: ClaveDeployer;
     let provider: Provider;
     let richWallet: Wallet;
-    let teeValidator: Contract;
+    let eoaValidator: Contract;
     let account: Contract;
     let wallet: HDNodeWallet;
 
@@ -31,10 +31,10 @@ describe('Clave Contracts - Upgrade Manager tests', () => {
             cacheTimeout: -1,
         });
 
-        [, , , , teeValidator, account, wallet] = await fixture(
+        ({eoaValidator, account, wallet} = await fixture(
             deployer,
             VALIDATORS.EOA,
-        );
+        ));
 
         const accountAddress = await account.getAddress();
 
@@ -65,7 +65,7 @@ describe('Clave Contracts - Upgrade Manager tests', () => {
             await upgradeTx(
                 provider,
                 account,
-                teeValidator,
+                eoaValidator,
                 mockImplementation,
                 wallet,
             );
@@ -84,7 +84,7 @@ describe('Clave Contracts - Upgrade Manager tests', () => {
                 await upgradeTx(
                     provider,
                     account,
-                    teeValidator,
+                    eoaValidator,
                     mockImplementation,
                     wallet,
                 );

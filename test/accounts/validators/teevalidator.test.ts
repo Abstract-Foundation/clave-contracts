@@ -5,7 +5,7 @@
  */
 import { assert, expect } from 'chai';
 import type { ec } from 'elliptic';
-import { parseEther } from 'ethers';
+import { HDNodeWallet, parseEther } from 'ethers';
 import * as hre from 'hardhat';
 import { Provider, Wallet, utils } from 'zksync-ethers';
 import type { Contract } from 'zksync-ethers';
@@ -20,13 +20,18 @@ import {
     prepareMockTx,
     prepareTeeTx,
 } from '../../utils/transactions';
+import { addR1Validator } from '../../utils/managers/validatormanager';
+import { encodePublicKey } from '../../utils/p256';
+import { addR1Key } from '../../utils/managers/ownermanager';
 
 describe('Clave Contracts - TEE Validator tests', () => {
     let deployer: ClaveDeployer;
     let provider: Provider;
     let richWallet: Wallet;
+    let eoaValidator: Contract;
     let teeValidator: Contract;
     let account: Contract;
+    let wallet: HDNodeWallet;
     let keyPair: ec.KeyPair;
 
     before(async () => {
@@ -36,14 +41,30 @@ describe('Clave Contracts - TEE Validator tests', () => {
             cacheTimeout: -1,
         });
 
-        [, , , , teeValidator, account, keyPair] = await fixture(
+        ({ teeValidator, eoaValidator, account, wallet, keyPair } = await fixture(
             deployer,
-            VALIDATORS.TEE,
-        );
+            VALIDATORS.EOA,
+        ));
 
         const accountAddress = await account.getAddress();
 
         await deployer.fund(10000, accountAddress);
+
+        await addR1Validator(
+            provider,
+            account,
+            eoaValidator,
+            teeValidator,
+            wallet,
+        );
+
+        await addR1Key(
+            provider,
+            account,
+            eoaValidator,
+            encodePublicKey(keyPair),
+            wallet,
+        );
     });
 
     describe('TEEValidator', () => {

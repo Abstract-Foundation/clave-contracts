@@ -8,7 +8,8 @@ import type { Contract, Provider, Wallet } from 'zksync-ethers';
 import { utils } from 'zksync-ethers';
 
 import { encodePublicKey } from '../p256';
-import { prepareTeeTx } from '../transactions';
+import { prepareTeeTx, prepareEOATx } from '../transactions';
+import { HDNodeWallet, TransactionLike } from 'ethers';
 
 type StartRecoveryParams = {
     recoveringAddress: string;
@@ -94,17 +95,29 @@ export async function stopRecovery(
     account: Contract,
     module: Contract,
     validator: Contract,
-    keyPair: ec.KeyPair,
+    wallet: HDNodeWallet,
+    keyPair?: ec.KeyPair,
 ): Promise<void> {
     const stopRecoveryTx = await module.stopRecovery.populateTransaction();
 
-    const tx = await prepareTeeTx(
-        provider,
-        account,
-        stopRecoveryTx,
-        await validator.getAddress(),
-        keyPair,
-    );
+    let tx: TransactionLike;
+    if (keyPair) {
+        tx = await prepareTeeTx(
+            provider,
+            account,
+            stopRecoveryTx,
+            await validator.getAddress(),
+            keyPair,
+        );
+    } else {
+        tx = await prepareEOATx(
+            provider,
+            account,
+            stopRecoveryTx,
+            await validator.getAddress(),
+            wallet,
+        );
+    }
 
     const txReceipt = await provider.broadcastTransaction(
         utils.serializeEip712(tx),
@@ -118,17 +131,17 @@ export async function updateCloudGuardian(
     module: Contract,
     validator: Contract,
     newAddress: string,
-    keyPair: ec.KeyPair,
+    wallet: HDNodeWallet,
 ): Promise<void> {
     const updateGuardianTx = await module.updateGuardian.populateTransaction(
         newAddress,
     );
-    const tx = await prepareTeeTx(
+    const tx = await prepareEOATx(
         provider,
         account,
         updateGuardianTx,
         await validator.getAddress(),
-        keyPair,
+        wallet,
     );
 
     const txReceipt = await provider.broadcastTransaction(
@@ -143,7 +156,7 @@ export async function updateSocialRecoveryConfig(
     module: Contract,
     validator: Contract,
     config: [number, number, Array<string>],
-    keyPair: ec.KeyPair,
+    wallet: HDNodeWallet,
 ): Promise<void> {
     const updateConfigTx = await module.updateConfig.populateTransaction({
         threshold: config[0],
@@ -151,12 +164,12 @@ export async function updateSocialRecoveryConfig(
         guardians: config[2],
     });
 
-    const tx = await prepareTeeTx(
+    const tx = await prepareEOATx(
         provider,
         account,
         updateConfigTx,
         await validator.getAddress(),
-        keyPair,
+        wallet,
     );
     const txReceipt = await provider.broadcastTransaction(
         utils.serializeEip712(tx),

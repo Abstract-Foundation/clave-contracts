@@ -8,16 +8,22 @@ import type { Contract } from 'zksync-ethers';
 import type { ClaveDeployer } from './deployer';
 import { VALIDATORS } from './names';
 import { HDNodeWallet } from 'ethers';
+import { genKey } from './p256';
+import { ec } from 'elliptic';
 
-export type fixtureTypes = [
+export type fixtureTypes = {
     batchCaller: Contract,
     registry: Contract,
     implementation: Contract,
     factory: Contract,
-    validator: Contract,
+    eoaValidator: Contract,
+    teeValidator: Contract,
+    passkeyValidator: Contract,
     account: Contract,
+    mockValidator: Contract,
     wallet: HDNodeWallet,
-];
+    keyPair: ec.KeyPair,
+};
 
 export const fixture = async (
     deployer: ClaveDeployer,
@@ -29,16 +35,34 @@ export const fixture = async (
     const registry = await deployer.registry();
     const implementation = await deployer.implementation(batchCaller);
     const factory = await deployer.factory(implementation, registry);
-    const validator = await deployer.validator(validatorOption);
-    const account = await deployer.account(wallet, factory, validator);
+    const eoaValidator = await deployer.validator(VALIDATORS.EOA);
+    const teeValidator = await deployer.validator(VALIDATORS.TEE);
+    const mockValidator = await deployer.validator(VALIDATORS.MOCK);
+    const passkeyValidator = await deployer.validator(VALIDATORS.PASSKEY);
 
-    return [
+    const primaryValidator = validatorOption === VALIDATORS.EOA 
+        ? eoaValidator 
+        : validatorOption === VALIDATORS.TEE 
+            ? teeValidator 
+            : validatorOption === VALIDATORS.PASSKEY
+                ? passkeyValidator
+                : mockValidator;
+
+    const account = await deployer.account(wallet, factory, primaryValidator);
+
+    const keyPair = genKey();
+
+    return {
         batchCaller,
         registry,
         implementation,
         factory,
-        validator,
+        eoaValidator,
+        teeValidator,
+        mockValidator,
+        passkeyValidator,
         account,
         wallet,
-    ];
+        keyPair
+    };
 };

@@ -28,9 +28,10 @@ describe('Clave Contracts - EOA Validator tests', () => {
     let deployer: ClaveDeployer;
     let provider: Provider;
     let richWallet: Wallet;
+    let eoaValidator: Contract;
     let teeValidator: Contract;
     let account: Contract;
-    let keyPair: ec.KeyPair;
+    let wallet: HDNodeWallet;
 
     before(async () => {
         richWallet = getWallet(hre, LOCAL_RICH_WALLETS[0].privateKey);
@@ -39,10 +40,10 @@ describe('Clave Contracts - EOA Validator tests', () => {
             cacheTimeout: -1,
         });
 
-        [, , , , teeValidator, account, keyPair] = await fixture(
+        ({ eoaValidator, teeValidator, account, wallet} = await fixture(
             deployer,
-            VALIDATORS.TEE,
-        );
+            VALIDATORS.EOA,
+        ));
 
         const accountAddress = await account.getAddress();
 
@@ -60,26 +61,26 @@ describe('Clave Contracts - EOA Validator tests', () => {
             await addK1Validator(
                 provider,
                 account,
-                teeValidator,
+                eoaValidator,
                 newK1Validator,
-                keyPair,
+                wallet,
             );
 
             await addK1Key(
                 provider,
                 account,
-                teeValidator,
+                eoaValidator,
                 await newK1Owner.getAddress(),
-                keyPair,
+                wallet,
             );
         });
 
         it('should check existing validator', async () => {
-            const teeValidatorAddress = await teeValidator.getAddress();
+            const eoaValidatorAddress = await eoaValidator.getAddress();
             const k1ValidatorAddress = await newK1Validator.getAddress();
             const k1OwnerAddress = await newK1Owner.getAddress();
 
-            expect(await account.r1IsValidator(teeValidatorAddress)).to.be.true;
+            expect(await account.k1IsValidator(eoaValidatorAddress)).to.be.true;
 
             expect(await account.k1IsValidator(k1ValidatorAddress)).to.be.true;
 
