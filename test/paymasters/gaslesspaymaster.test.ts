@@ -56,7 +56,10 @@ describe('Clave Contracts - Gasless Paymaster tests', () => {
         await erc20.mint(accountAddress, parseEther('100000'));
 
         gaslessPaymaster = await deployer.paymaster(PAYMASTERS.GASLESS, {
-            gasless: [await registry.getAddress(), 3],
+            gasless: {
+                registryAddress: await registry.getAddress(),
+                limit: 3
+            },
         });
 
         await deployer.fund(50, await gaslessPaymaster.getAddress());
