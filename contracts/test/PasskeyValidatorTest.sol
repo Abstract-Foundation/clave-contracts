@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.17;
 
-import {Base64} from '../helpers/Base64.sol';
+import {Base64} from "@openzeppelin/contracts/utils/Base64.sol";
 import {IR1Validator, IERC165} from '../interfaces/IValidator.sol';
 import {Errors} from '../libraries/Errors.sol';
 import {VerifierCaller} from '../helpers/VerifierCaller.sol';
