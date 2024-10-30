@@ -5,7 +5,7 @@
  */
 import { assert, expect } from 'chai';
 import type { ec } from 'elliptic';
-import { parseEther } from 'ethers';
+import { HDNodeWallet, parseEther } from 'ethers';
 import * as hre from 'hardhat';
 import { Contract, Provider, Wallet, utils } from 'zksync-ethers';
 
@@ -25,9 +25,9 @@ describe('Clave Contracts - Validator Manager tests', () => {
     let deployer: ClaveDeployer;
     let provider: Provider;
     let richWallet: Wallet;
-    let teeValidator: Contract;
+    let eoaValidator: Contract;
     let account: Contract;
-    let keyPair: ec.KeyPair;
+    let wallet: HDNodeWallet;
 
     before(async () => {
         richWallet = getWallet(hre, LOCAL_RICH_WALLETS[0].privateKey);
@@ -36,10 +36,10 @@ describe('Clave Contracts - Validator Manager tests', () => {
             cacheTimeout: -1,
         });
 
-        [, , , , teeValidator, account, keyPair] = await fixture(
+        ({eoaValidator, account, wallet} = await fixture(
             deployer,
             VALIDATORS.EOA,
-        );
+        ));
 
         const accountAddress = await account.getAddress();
 
@@ -48,9 +48,9 @@ describe('Clave Contracts - Validator Manager tests', () => {
 
     describe('Validator Manager', () => {
         it('should check existing validator', async () => {
-            const validatorAddress = await teeValidator.getAddress();
+            const validatorAddress = await eoaValidator.getAddress();
 
-            expect(await account.r1IsValidator(validatorAddress)).to.be.true;
+            expect(await account.k1IsValidator(validatorAddress)).to.be.true;
         });
 
         describe('Full tests with r1 validator type, adding-removing-validating', () => {
@@ -66,21 +66,26 @@ describe('Clave Contracts - Validator Manager tests', () => {
                 await addR1Validator(
                     provider,
                     account,
-                    teeValidator,
+                    eoaValidator,
                     newR1Validator,
-                    keyPair,
+                    wallet,
                 );
 
                 expect(await account.r1IsValidator(validatorAddress)).to.be
                     .true;
 
-                const expectedValidators = [
+                const expectedR1Validators = [
                     validatorAddress,
-                    await teeValidator.getAddress(),
+                ];
+                const expectedK1Validators = [
+                    await eoaValidator.getAddress()
                 ];
 
                 expect(await account.r1ListValidators()).to.deep.eq(
-                    expectedValidators,
+                    expectedR1Validators,
+                );
+                expect(await account.k1ListValidators()).to.deep.eq(
+                    expectedK1Validators,
                 );
             });
 
@@ -117,18 +122,24 @@ describe('Clave Contracts - Validator Manager tests', () => {
                 await removeR1Validator(
                     provider,
                     account,
-                    teeValidator,
+                    eoaValidator,
                     newR1Validator,
-                    keyPair,
+                    wallet,
                 );
 
                 expect(await account.r1IsValidator(validatorAddress)).to.be
                     .false;
 
-                const expectedValidators = [await teeValidator.getAddress()];
+                const expectedR1Validators: string[] = [];
+                const expectedK1Validators: string[] = [
+                    await eoaValidator.getAddress(),
+                ];
 
                 expect(await account.r1ListValidators()).to.deep.eq(
-                    expectedValidators,
+                    expectedR1Validators,
+                );
+                expect(await account.k1ListValidators()).to.deep.eq(
+                    expectedK1Validators,
                 );
             });
         });
@@ -145,14 +156,17 @@ describe('Clave Contracts - Validator Manager tests', () => {
                 await addK1Validator(
                     provider,
                     account,
-                    teeValidator,
+                    eoaValidator,
                     newK1Validator,
-                    keyPair,
+                    wallet,
                 );
 
                 expect(await account.k1IsValidator(newK1Validator)).to.be.true;
 
-                const expectedValidators = [validatorAddress];
+                const expectedValidators = [
+                    validatorAddress,
+                    await eoaValidator.getAddress(),
+                ];
 
                 expect(await account.k1ListValidators()).to.deep.eq(
                     expectedValidators,
@@ -167,15 +181,21 @@ describe('Clave Contracts - Validator Manager tests', () => {
                 await removeK1Validator(
                     provider,
                     account,
-                    teeValidator,
+                    eoaValidator,
                     newK1Validator,
-                    keyPair,
+                    wallet,
                 );
 
                 expect(await account.r1IsValidator(validatorAddress)).to.be
                     .false;
 
-                expect(await account.k1ListValidators()).to.deep.eq([]);
+                const expectedK1Validators: string[] = [
+                    await eoaValidator.getAddress(),
+                ];
+
+                expect(await account.k1ListValidators()).to.deep.eq(
+                    expectedK1Validators,
+                );
             });
         });
 
@@ -213,9 +233,9 @@ describe('Clave Contracts - Validator Manager tests', () => {
                 await addR1Validator(
                     provider,
                     account,
-                    teeValidator,
+                    eoaValidator,
                     newR1Validator,
-                    keyPair,
+                    wallet
                 );
                 expect(await account.r1IsValidator(r1ValidatorAddress)).to.be
                     .true;
@@ -235,9 +255,9 @@ describe('Clave Contracts - Validator Manager tests', () => {
                 await addK1Validator(
                     provider,
                     account,
-                    teeValidator,
+                    eoaValidator,
                     newK1Validator,
-                    keyPair,
+                    wallet
                 );
                 expect(await account.k1IsValidator(k1ValidatorAddress)).to.be
                     .true;
@@ -254,16 +274,16 @@ describe('Clave Contracts - Validator Manager tests', () => {
                 await removeR1Validator(
                     provider,
                     account,
-                    teeValidator,
+                    eoaValidator,
                     newR1Validator,
-                    keyPair,
+                    wallet,
                 );
                 await removeK1Validator(
                     provider,
                     account,
-                    teeValidator,
+                    eoaValidator,
                     newK1Validator,
-                    keyPair,
+                    wallet,
                 );
             });
 
@@ -280,9 +300,9 @@ describe('Clave Contracts - Validator Manager tests', () => {
                     await addR1Validator(
                         provider,
                         account,
-                        teeValidator,
+                        eoaValidator,
                         wrongR1Validator,
-                        keyPair,
+                        wallet,
                     );
                     assert(false, 'Should revert');
                 } catch (err) {}
@@ -291,9 +311,9 @@ describe('Clave Contracts - Validator Manager tests', () => {
                     await addK1Validator(
                         provider,
                         account,
-                        teeValidator,
+                        eoaValidator,
                         wrongK1Validator,
-                        keyPair,
+                        wallet,
                     );
                     assert(false, 'Should revert');
                 } catch (err) {}
@@ -308,9 +328,9 @@ describe('Clave Contracts - Validator Manager tests', () => {
                     await addR1Validator(
                         provider,
                         account,
-                        teeValidator,
+                        eoaValidator,
                         new Contract(validatorAddress, []),
-                        keyPair,
+                        wallet,
                     );
                     assert(false, 'Should revert');
                 } catch (err) {}
@@ -319,28 +339,28 @@ describe('Clave Contracts - Validator Manager tests', () => {
                     await addK1Validator(
                         provider,
                         account,
-                        teeValidator,
+                        eoaValidator,
                         new Contract(validatorAddress, []),
-                        keyPair,
+                        wallet,
                     );
                     assert(false, 'Should revert');
                 } catch (err) {}
             });
 
-            it('should revert removing the last r1 validator', async () => {
-                const expectedValidators = [await teeValidator.getAddress()];
+            it('should revert removing the last k1 validator', async () => {
+                const expectedValidators = [await eoaValidator.getAddress()];
 
-                expect(await account.r1ListValidators()).to.deep.eq(
+                expect(await account.k1ListValidators()).to.deep.eq(
                     expectedValidators,
                 );
 
                 try {
-                    await removeR1Validator(
+                    await removeK1Validator(
                         provider,
                         account,
-                        teeValidator,
-                        teeValidator,
-                        keyPair,
+                        eoaValidator,
+                        eoaValidator,
+                        wallet
                     );
                     assert(false, 'Should revert');
                 } catch (err) {}

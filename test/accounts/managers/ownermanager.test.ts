@@ -24,11 +24,13 @@ import {
 import { VALIDATORS } from '../../utils/names';
 import { encodePublicKey, genKey } from '../../utils/p256';
 import { ethTransfer, prepareEOATx, prepareTeeTx } from '../../utils/transactions';
+import { addR1Validator } from '../../utils/managers/validatormanager';
 
 describe('Clave Contracts - Owner Manager tests', () => {
     let deployer: ClaveDeployer;
     let provider: Provider;
     let richWallet: Wallet;
+    let eoaValidator: Contract;
     let teeValidator: Contract;
     let account: Contract;
     let wallet: HDNodeWallet;
@@ -40,10 +42,10 @@ describe('Clave Contracts - Owner Manager tests', () => {
             cacheTimeout: -1,
         });
 
-        [, , , , teeValidator, account, wallet] = await fixture(
+        ({eoaValidator, teeValidator, account, wallet}= await fixture(
             deployer,
             VALIDATORS.EOA,
-        );
+        ));
 
         const accountAddress = await account.getAddress();
 
@@ -63,12 +65,20 @@ describe('Clave Contracts - Owner Manager tests', () => {
                 newKeyPair = genKey();
                 newPublicKey = encodePublicKey(newKeyPair);
 
+                await addR1Validator(
+                    provider,
+                    account,
+                    eoaValidator,
+                    teeValidator,
+                    wallet,
+                );
+
                 expect(await account.r1IsOwner(newPublicKey)).to.be.false;
 
                 await addR1Key(
                     provider,
                     account,
-                    teeValidator,
+                    eoaValidator,
                     newPublicKey,
                     wallet,
                 );
@@ -90,12 +100,13 @@ describe('Clave Contracts - Owner Manager tests', () => {
                 );
 
                 const txData = ethTransfer(richAddress, amount);
-                const tx = await prepareEOATx(
+
+                const tx = await prepareTeeTx(
                     provider,
                     account,
                     txData,
                     await teeValidator.getAddress(),
-                    wallet,
+                    newKeyPair,
                 );
                 const txReceipt = await provider.broadcastTransaction(
                     utils.serializeEip712(tx),
@@ -114,7 +125,7 @@ describe('Clave Contracts - Owner Manager tests', () => {
                 await removeR1Key(
                     provider,
                     account,
-                    teeValidator,
+                    eoaValidator,
                     newPublicKey,
                     wallet,
                 );
@@ -157,7 +168,7 @@ describe('Clave Contracts - Owner Manager tests', () => {
                 await addK1Key(
                     provider,
                     account,
-                    teeValidator,
+                    eoaValidator,
                     newK1Address,
                     wallet,
                 );
@@ -174,7 +185,7 @@ describe('Clave Contracts - Owner Manager tests', () => {
                 await removeK1Key(
                     provider,
                     account,
-                    teeValidator,
+                    eoaValidator,
                     newK1Address,
                     wallet,
                 );
@@ -194,7 +205,7 @@ describe('Clave Contracts - Owner Manager tests', () => {
                 await addR1Key(
                     provider,
                     account,
-                    teeValidator,
+                    eoaValidator,
                     newPublicKey,
                     wallet,
                 );
@@ -203,7 +214,7 @@ describe('Clave Contracts - Owner Manager tests', () => {
                 await addK1Key(
                     provider,
                     account,
-                    teeValidator,
+                    eoaValidator,
                     newK1Address,
                     wallet,
                 );
@@ -223,7 +234,7 @@ describe('Clave Contracts - Owner Manager tests', () => {
                 await resetOwners(
                     provider,
                     account,
-                    teeValidator,
+                    eoaValidator,
                     newPublicKey,
                     wallet,
                 );
@@ -232,6 +243,7 @@ describe('Clave Contracts - Owner Manager tests', () => {
                 const expectedNewR1Owners = [encodePublicKey(replacedKeyPair)];
                 const expectedNewK1Owners: Array<BytesLike> = [];
 
+                expect(await account.r1IsOwner(encodePublicKey(replacedKeyPair))).to.be.true;
                 expect(await account.r1ListOwners()).to.deep.eq(
                     expectedNewR1Owners,
                 );
@@ -283,6 +295,8 @@ describe('Clave Contracts - Owner Manager tests', () => {
             it('Should revert removing r1 or k1 owners and resetting owners with unauthorized msg.sender, then should reset owners to the initial', async function () {
                 const newKeyPair = genKey();
                 const newPublicKey = encodePublicKey(newKeyPair);
+
+                expect(await account.r1IsOwner(encodePublicKey(replacedKeyPair))).to.be.true;
 
                 await addR1Key(
                     provider,

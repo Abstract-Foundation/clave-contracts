@@ -4,7 +4,7 @@
  * Proprietary and confidential
  */
 import { expect } from 'chai';
-import { parseEther } from 'ethers';
+import { HDNodeWallet, parseEther } from 'ethers';
 import * as hre from 'hardhat';
 import type { Contract, Wallet } from 'zksync-ethers';
 import { Provider, utils } from 'zksync-ethers';
@@ -18,6 +18,8 @@ import {
     prepareMockBatchTx,
     prepareMockTx,
 } from '../utils/transactions';
+import { VALIDATORS } from '../utils/names';
+import { addR1Validator } from '../utils/managers/validatormanager';
 
 describe('Clave Contracts - Account tests', () => {
     let deployer: ClaveDeployer;
@@ -25,6 +27,8 @@ describe('Clave Contracts - Account tests', () => {
     let richWallet: Wallet;
     let batchCaller: Contract;
     let mockValidator: Contract;
+    let eoaValidator: Contract;
+    let wallet: HDNodeWallet;
     let account: Contract;
 
     let erc20: Contract;
@@ -36,11 +40,19 @@ describe('Clave Contracts - Account tests', () => {
             cacheTimeout: -1,
         });
 
-        [batchCaller, , , , mockValidator, account] = await fixture(deployer);
+        ({batchCaller, mockValidator, eoaValidator, account, wallet} = await fixture(deployer, VALIDATORS.EOA))
 
         const accountAddress = await account.getAddress();
 
         await deployer.fund(10000, accountAddress);
+
+        await addR1Validator(
+            provider,
+            account,
+            eoaValidator,
+            mockValidator,
+            wallet,
+        );
 
         erc20 = await deployer.deployCustomContract('MockStable', []);
         await erc20.mint(accountAddress, parseEther('100000'));

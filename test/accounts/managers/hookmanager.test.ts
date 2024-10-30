@@ -20,7 +20,7 @@ describe('Clave Contracts - Hook Manager tests', () => {
     let deployer: ClaveDeployer;
     let provider: Provider;
     let richWallet: Wallet;
-    let teeValidator: Contract;
+    let eoaValidator: Contract;
     let account: Contract;
     let wallet: HDNodeWallet;
 
@@ -31,10 +31,10 @@ describe('Clave Contracts - Hook Manager tests', () => {
             cacheTimeout: -1,
         });
 
-        [, , , , teeValidator, account, wallet] = await fixture(
+        ({ eoaValidator, account, wallet } = await fixture(
             deployer,
             VALIDATORS.EOA,
-        );
+        ));
 
         const accountAddress = await account.getAddress();
 
@@ -64,7 +64,7 @@ describe('Clave Contracts - Hook Manager tests', () => {
                 await addHook(
                     provider,
                     account,
-                    teeValidator,
+                    eoaValidator,
                     validationHook,
                     HOOKS.VALIDATION,
                     wallet,
@@ -108,7 +108,7 @@ describe('Clave Contracts - Hook Manager tests', () => {
                     provider,
                     account,
                     transfer,
-                    await teeValidator.getAddress(),
+                    await eoaValidator.getAddress(),
                     wallet,
                     hookData,
                 );
@@ -130,7 +130,7 @@ describe('Clave Contracts - Hook Manager tests', () => {
                 await removeHook(
                     provider,
                     account,
-                    teeValidator,
+                    eoaValidator,
                     validationHook,
                     HOOKS.VALIDATION,
                     wallet,
@@ -162,7 +162,7 @@ describe('Clave Contracts - Hook Manager tests', () => {
                 await addHook(
                     provider,
                     account,
-                    teeValidator,
+                    eoaValidator,
                     executionHook,
                     HOOKS.EXECUTION,
                     wallet,
@@ -184,7 +184,7 @@ describe('Clave Contracts - Hook Manager tests', () => {
                 await removeHook(
                     provider,
                     account,
-                    teeValidator,
+                    eoaValidator,
                     executionHook,
                     HOOKS.EXECUTION,
                     wallet,
@@ -247,7 +247,7 @@ describe('Clave Contracts - Hook Manager tests', () => {
                     await addHook(
                         provider,
                         account,
-                        teeValidator,
+                        eoaValidator,
                         new Contract(await noInterfaceHook.getAddress(), []),
                         HOOKS.VALIDATION,
                         wallet,
@@ -259,7 +259,7 @@ describe('Clave Contracts - Hook Manager tests', () => {
                     await addHook(
                         provider,
                         account,
-                        teeValidator,
+                        eoaValidator,
                         new Contract(await noInterfaceHook.getAddress(), []),
                         HOOKS.EXECUTION,
                         wallet,
@@ -282,7 +282,7 @@ describe('Clave Contracts - Hook Manager tests', () => {
                     provider,
                     account,
                     addHookTx,
-                    await teeValidator.getAddress(),
+                    await eoaValidator.getAddress(),
                     wallet,
                 );
 
@@ -300,7 +300,7 @@ describe('Clave Contracts - Hook Manager tests', () => {
                     await addHook(
                         provider,
                         account,
-                        teeValidator,
+                        eoaValidator,
                         validationHook,
                         HOOKS.VALIDATION,
                         wallet,
@@ -320,7 +320,7 @@ describe('Clave Contracts - Hook Manager tests', () => {
                     await addHook(
                         provider,
                         account,
-                        teeValidator,
+                        eoaValidator,
                         executionHook,
                         HOOKS.EXECUTION,
                         wallet,
@@ -370,7 +370,7 @@ describe('Clave Contracts - Hook Manager tests', () => {
                         provider,
                         account,
                         transfer,
-                        await teeValidator.getAddress(),
+                        await eoaValidator.getAddress(),
                         wallet,
                         hookData,
                     );
@@ -396,7 +396,7 @@ describe('Clave Contracts - Hook Manager tests', () => {
                         provider,
                         account,
                         transfer,
-                        await teeValidator.getAddress(),
+                        await eoaValidator.getAddress(),
                         wallet,
                         hookData,
                     );
