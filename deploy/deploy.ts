@@ -3,12 +3,13 @@
  * Unauthorized copying of this file, via any medium is strictly prohibited
  * Proprietary and confidential
  */
+import type { ec } from 'elliptic';
 import {
     ZeroAddress,
     zeroPadValue
 } from 'ethers';
 import * as hre from 'hardhat';
-import { Contract, Wallet, utils } from 'zksync-ethers';
+import { Contract, Provider, Wallet, utils } from 'zksync-ethers';
 import { deployContract, getWallet, verifyContract } from '../deploy/utils';
 import type { CallStruct } from '../typechain-types/contracts/batch/BatchCaller';
 let fundingWallet: Wallet;
@@ -27,42 +28,42 @@ export default async function (): Promise<void> {
 
     const initialOwner = fundingWallet.address;
 
-    batchCaller = await deployContract(hre, 'BatchCaller', undefined, 'create2', {
+     await deployContract(hre, 'BatchCaller', undefined, {
         wallet: fundingWallet,
         silent: false,
-    });
+    }, 'create');
 
-    eoaValidator = await deployContract(hre, 'EOAValidator', undefined, 'create2', {
+    eoaValidator = await deployContract(hre, 'EOAValidator', undefined, {
         wallet: fundingWallet,
         silent: false,
-    });
+    }, 'create2');
 
     implementation = await deployContract(
         hre,
         'ClaveImplementation',
         [await batchCaller.getAddress()],
-        'create2',
         {
             wallet: fundingWallet,
             silent: false,
         },
+        'create2',
     );
 
     registry = await deployContract(hre, 'ClaveRegistry',
         [
             initialOwner,
-        ],
-        'create2',
-        { wallet: fundingWallet, silent: false,
-    });
+        ], {
+        wallet: fundingWallet,
+        silent: false,
+    }, 'create2');
 
     // Need this so the ClaveProxy artifact is valid
     await deployContract(
         hre,
         'ClaveProxy',
         [await implementation.getAddress()],
-        'create2',
         { wallet: fundingWallet, silent: true, noVerify: true },
+        'create2',
     );
 
     const accountProxyArtifact = await hre.zksyncEthers.loadArtifact('ClaveProxy');
@@ -77,11 +78,11 @@ export default async function (): Promise<void> {
             fundingWallet.address,
             initialOwner,
         ],
-        'create2',
         {
             wallet: fundingWallet,
             silent: false,
         },
+        'create2',
     );
     await registry.setFactory(await factory.getAddress());
 
@@ -94,6 +95,7 @@ export default async function (): Promise<void> {
     };
 
     const salt = initialOwner.padEnd(66, '0');
+    console.log("salt", salt);
     const initializer =
         '0xb4e581f5' +
         abiCoder
@@ -117,6 +119,7 @@ export default async function (): Promise<void> {
     await tx.wait();
 
     const accountAddress = await factory.getAddressForSalt(salt);
+
     await verifyContract(hre, {
         address: accountAddress,
         contract: "contracts/ClaveProxy.sol:ClaveProxy",

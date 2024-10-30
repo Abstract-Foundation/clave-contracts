@@ -96,8 +96,8 @@ export const deployContract = async (
     hre: HardhatRuntimeEnvironment,
     contractArtifactName: string,
     constructorArguments?: Array<unknown>,
-    deploymentType: DeploymentType = 'create',
     options?: DeployContractOptions,
+    deploymentType: DeploymentType = 'create',
     
 ): Promise<ethers.Contract> => {
     const log = (message: string): void => {
