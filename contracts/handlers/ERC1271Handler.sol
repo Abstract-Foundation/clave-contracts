@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.17;
 
-import {IERC1271Upgradeable} from '@openzeppelin/contracts-upgradeable/interfaces/IERC1271Upgradeable.sol';
+import {IERC1271} from '@openzeppelin/contracts/interfaces/IERC1271.sol';
 
 import {SignatureDecoder} from '../libraries/SignatureDecoder.sol';
 import {ValidationHandler} from './ValidationHandler.sol';
-import {EIP712} from '../helpers/EIP712.sol';
+import {EIP712Upgradeable} from '@openzeppelin/contracts-upgradeable/utils/cryptography/EIP712Upgradeable.sol';
 
 /**
  * @title ERC1271Handler
@@ -13,8 +13,8 @@ import {EIP712} from '../helpers/EIP712.sol';
  * @author https://getclave.io
  */
 abstract contract ERC1271Handler is
-    IERC1271Upgradeable,
-    EIP712('AbstractGlobalWallet', '1.0.0'),
+    IERC1271,
+    EIP712Upgradeable,
     ValidationHandler
 {
     struct ClaveMessage {
@@ -24,6 +24,10 @@ abstract contract ERC1271Handler is
     bytes32 constant _CLAVE_MESSAGE_TYPEHASH = keccak256('ClaveMessage(bytes32 signedHash)');
 
     bytes4 private constant _ERC1271_MAGIC = 0x1626ba7e;
+
+    function __ERC1271Handler_init() internal onlyInitializing {
+        __EIP712_init('AbstractGlobalWallet', '1.0.0');
+    }
 
     /**
      * @dev Should return whether the signature provided is valid for the provided data

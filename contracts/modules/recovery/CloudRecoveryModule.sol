@@ -4,7 +4,7 @@ pragma solidity ^0.8.17;
 import {IERC165} from '@openzeppelin/contracts/utils/introspection/IERC165.sol';
 import {SignatureChecker} from '@openzeppelin/contracts/utils/cryptography/SignatureChecker.sol';
 
-import {EIP712} from '../../helpers/EIP712.sol';
+import {EIP712} from '@openzeppelin/contracts/utils/cryptography/EIP712.sol';
 import {Errors} from '../../libraries/Errors.sol';
 import {IInitable} from '../../interfaces/IInitable.sol';
 import {IClaveAccount} from '../../interfaces/IClave.sol';

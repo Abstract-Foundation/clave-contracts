@@ -17,7 +17,7 @@ contract EOAValidator is IK1Validator {
         bytes32 signedHash,
         bytes calldata signature
     ) external pure override returns (address signer) {
-        (signer, ) = signedHash.tryRecover(signature);
+        (signer, ,) = signedHash.tryRecover(signature);
     }
 
     /// @inheritdoc IERC165

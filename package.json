@@ -5,8 +5,8 @@
   "dependencies": {
     "@matterlabs/zksync-contracts": "0.6.1",
     "@nomad-xyz/excessively-safe-call": "github:nomad-xyz/ExcessivelySafeCall",
-    "@openzeppelin/contracts": "4.6.0",
-    "@openzeppelin/contracts-upgradeable": "4.6.0",
+    "@openzeppelin/contracts": "5.1.0",
+    "@openzeppelin/contracts-upgradeable": "5.1.0",
     "ts-morph": "^19.0.0"
   },
   "devDependencies": {

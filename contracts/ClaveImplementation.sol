@@ -65,6 +65,7 @@ contract ClaveImplementation is
         bytes[] calldata modules,
         Call calldata initCall
     ) public {
+        __ERC1271Handler_init();
         // check that this account is being deployed by the initial signer or the factory authorized deployer
         AccountFactory factory = AccountFactory(msg.sender);
         address thisDeployer = factory.accountToDeployer(address(this));
