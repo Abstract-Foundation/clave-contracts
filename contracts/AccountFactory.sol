@@ -13,8 +13,12 @@ import {IClaveRegistry} from './interfaces/IClaveRegistry.sol';
  * @author https://getclave.io
  */
 contract AccountFactory is Ownable {
-    // Addresses of the implementation and registry contract
+    // Address of the account implementation 
     address public implementationAddress;
+    // Selector of the account initializer function
+    bytes4 public initializerSelector;
+
+    // Account registry contract address
     address public registry;
 
     // Account creation bytecode hash
@@ -63,12 +67,14 @@ contract AccountFactory is Ownable {
      */
     constructor(
         address _implementation,
+        bytes4 _initializerSelector,
         address _registry,
         bytes32 _proxyBytecodeHash,
         address _deployer,
         address _owner
     ) Ownable(_owner) {
         implementationAddress = _implementation;
+        initializerSelector = _initializerSelector;
         registry = _registry;
         proxyBytecodeHash = _proxyBytecodeHash;
         deployer = _deployer;
@@ -85,7 +91,20 @@ contract AccountFactory is Ownable {
         bytes32 salt,
         bytes memory initializer
     ) external returns (address accountAddress) {
-
+        // Check that the initializer is not empty
+        if (initializer.length < 4) {
+            revert Errors.INVALID_INITIALIZER();
+        }
+        // Check that the initializer selector is correct
+        {
+            bytes4 selector;
+            assembly ('memory-safe') {
+                selector := mload(add(initializer, 0x20))
+            }
+            if (selector != initializerSelector) {
+                revert Errors.INVALID_INITIALIZER();
+            }
+        }
         // Deploy the implementation contract
         (bool success, bytes memory returnData) = SystemContractsCaller.systemCallWithReturndata(
             uint32(gasleft()),
@@ -161,8 +180,9 @@ contract AccountFactory is Ownable {
      * @notice Changes the implementation contract address
      * @param newImplementation address - Address of the new implementation contract
      */
-    function changeImplementation(address newImplementation) external onlyOwner {
+    function changeImplementation(address newImplementation, bytes4 newInitializerSelector) external onlyOwner {
         implementationAddress = newImplementation;
+        initializerSelector = newInitializerSelector;
 
         emit ImplementationChanged(newImplementation);
     }

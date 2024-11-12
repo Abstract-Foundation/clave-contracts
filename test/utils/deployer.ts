@@ -3,7 +3,6 @@
  * Unauthorized copying of this file, via any medium is strictly prohibited
  * Proprietary and confidential
  */
-import type { ec } from 'elliptic';
 import { AbiCoder, HDNodeWallet, ZeroAddress, keccak256, parseEther } from 'ethers';
 import type { HardhatRuntimeEnvironment } from 'hardhat/types';
 import type { Wallet } from 'zksync-ethers';
@@ -12,7 +11,6 @@ import { Contract, utils } from 'zksync-ethers';
 import { deployContract, getWallet } from '../../deploy/utils';
 import type { CallStruct } from '../../typechain-types/contracts/batch/BatchCaller';
 import { CONTRACT_NAMES, PAYMASTERS, type VALIDATORS } from './names';
-import { encodePublicKeyK1 } from './p256';
 
 // This class helps deploy Clave contracts for the tests
 export class ClaveDeployer {
@@ -88,6 +86,7 @@ export class ClaveDeployer {
             CONTRACT_NAMES.FACTORY,
             [
                 await implementation.getAddress(),
+                '0xb4e581f5',
                 await registry.getAddress(),
                 bytecodeHash,
                 this.deployerWallet.address,
@@ -133,9 +132,12 @@ export class ClaveDeployer {
         wallet: HDNodeWallet,
         factory: Contract,
         validator: Contract,
+        salt?: string,
+        initializer?: string,
     ): Promise<Contract> {
-        
-        const salt = keccak256(wallet.address);
+        if (!salt) {
+            salt = keccak256(wallet.address);
+        }
         const call: CallStruct = {
             target: ZeroAddress,
             allowFailure: false,
@@ -144,7 +146,9 @@ export class ClaveDeployer {
         };
 
         const abiCoder = AbiCoder.defaultAbiCoder();
-        const initializer =
+
+        if (!initializer) {
+         initializer =
             '0xb4e581f5' +
             abiCoder
                 .encode(
@@ -167,6 +171,7 @@ export class ClaveDeployer {
                     ],
                 )
                 .slice(2);
+        }
 
         const deployPromise = await Promise.all([
             // Deploy account
