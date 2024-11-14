@@ -171,6 +171,11 @@ abstract contract HookManager is IHookManager, Auth {
         } else {
             _executionHooksLinkedList().remove(hook);
         }
+        
+        // if the hook removal occured during execution of hooks, the hook 
+        // context will not be cleaned up during post execution so we need
+        // to delete it manually
+        _deleteContext(hook);
 
         (bool success, ) = hook.excessivelySafeCall(
             gasleft(),
