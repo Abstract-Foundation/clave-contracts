@@ -2,7 +2,7 @@
 pragma solidity ^0.8.17;
 
 import {SignatureDecoder} from '../libraries/SignatureDecoder.sol';
-import {BytesLinkedList} from '../libraries/LinkedList.sol';
+import {BytesLinkedList, AddressLinkedList} from '../libraries/LinkedList.sol';
 import {OwnerManager} from '../managers/OwnerManager.sol';
 import {ValidatorManager} from '../managers/ValidatorManager.sol';
 
@@ -19,7 +19,11 @@ abstract contract ValidationHandler is OwnerManager, ValidatorManager {
         bytes32 signedHash,
         bytes memory signature
     ) internal view returns (bool) {
-        if (_r1IsValidator(validator)) {
+        if (validator <= AddressLinkedList.SENTINEL_ADDRESS) {
+            // address less than or equal to sentinel address can't be used in linked list
+            // implementation so this scenario is never valid
+            return false;
+        } else if (_r1IsValidator(validator)) {
             mapping(bytes => bytes) storage owners = OwnerManager._r1OwnersLinkedList();
             bytes memory cursor = owners[BytesLinkedList.SENTINEL_BYTES];
             while (cursor.length > BytesLinkedList.SENTINEL_LENGTH) {
