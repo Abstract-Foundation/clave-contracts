@@ -3,7 +3,7 @@ pragma solidity ^0.8.17;
 
 import {DEPLOYER_SYSTEM_CONTRACT, IContractDeployer} from '@matterlabs/zksync-contracts/l2/system-contracts/Constants.sol';
 import {SystemContractsCaller} from '@matterlabs/zksync-contracts/l2/system-contracts/libraries/SystemContractsCaller.sol';
-import {Ownable} from '@openzeppelin/contracts/access/Ownable.sol';
+import {Ownable, Ownable2Step} from '@openzeppelin/contracts/access/Ownable2Step.sol';
 
 import {Errors} from './libraries/Errors.sol';
 import {IClaveRegistry} from './interfaces/IClaveRegistry.sol';
@@ -12,7 +12,7 @@ import {IClaveRegistry} from './interfaces/IClaveRegistry.sol';
  * @title Factory contract to create Clave accounts in zkSync Era
  * @author https://getclave.io
  */
-contract AccountFactory is Ownable {
+contract AccountFactory is Ownable2Step {
     // Address of the account implementation 
     address public implementationAddress;
     // Selector of the account initializer function
