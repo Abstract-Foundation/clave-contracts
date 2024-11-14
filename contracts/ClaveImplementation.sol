@@ -96,8 +96,13 @@ contract ClaveImplementation is
         }
     }
 
-    // Receive function to allow ETHs
+    // Receive function to allow ETH to be sent to the account
+    // with no additional calldata
     receive() external payable {}
+    
+    // Fallback function to allow ETH to be sent to the account
+    // with arbitrary calldata to mirror the behavior of an EOA
+    fallback() external payable {}
 
     /**
      * @notice Called by the bootloader to validate that an account agrees to process the transaction
