@@ -85,6 +85,11 @@ abstract contract HookManager is IHookManager, Auth {
         uint256 idx = 0;
         // Iterate through hooks
         while (cursor > AddressLinkedList.SENTINEL_ADDRESS) {
+            // hookData array is out of bounds for the number of hooks
+            if (idx >= hookData.length) {
+                return false;
+            }
+
             // Call it with corresponding hookData
             bool success = _call(
                 cursor,
