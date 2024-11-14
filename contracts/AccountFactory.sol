@@ -90,7 +90,7 @@ contract AccountFactory is Ownable {
     function deployAccount(
         bytes32 salt,
         bytes memory initializer
-    ) external returns (address accountAddress) {
+    ) external payable returns (address accountAddress) {
         // Check that the initializer is not empty
         if (initializer.length < 4) {
             revert Errors.INVALID_INITIALIZER();
@@ -137,7 +137,7 @@ contract AccountFactory is Ownable {
             initializeSuccess := call(
                 gas(),
                 accountAddress,
-                0,
+                callvalue(),
                 add(initializer, 0x20),
                 mload(initializer),
                 0,

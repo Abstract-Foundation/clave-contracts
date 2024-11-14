@@ -3,7 +3,7 @@
  * Unauthorized copying of this file, via any medium is strictly prohibited
  * Proprietary and confidential
  */
-import { AbiCoder, HDNodeWallet, ZeroAddress, keccak256, parseEther } from 'ethers';
+import { AbiCoder, BaseWallet, BigNumberish, HDNodeWallet, ZeroAddress, keccak256, parseEther } from 'ethers';
 import type { HardhatRuntimeEnvironment } from 'hardhat/types';
 import type { Wallet } from 'zksync-ethers';
 import { Contract, utils } from 'zksync-ethers';
@@ -129,21 +129,32 @@ export class ClaveDeployer {
     }
 
     public async account(
-        wallet: HDNodeWallet,
+        wallet: BaseWallet,
         factory: Contract,
         validator: Contract,
-        salt?: string,
-        initializer?: string,
+        overrideValues: {
+            salt?: string,
+            initializer?: string,
+            callValue?: BigNumberish,
+            initialCall?: CallStruct,
+        } = {},
     ): Promise<Contract> {
+        let { salt, initializer, callValue, initialCall } = overrideValues;
+
         if (!salt) {
             salt = keccak256(wallet.address);
         }
-        const call: CallStruct = {
-            target: ZeroAddress,
-            allowFailure: false,
-            value: 0,
-            callData: '0x',
-        };
+        if (callValue === undefined) {
+            callValue = 0;
+        }
+        if (!initialCall) {
+            initialCall = {
+                target: ZeroAddress,
+                allowFailure: false,
+                value: 0,
+                callData: '0x',
+            };
+        }
 
         const abiCoder = AbiCoder.defaultAbiCoder();
 
@@ -163,10 +174,10 @@ export class ClaveDeployer {
                         await validator.getAddress(),
                         [],
                         [
-                            call.target,
-                            call.allowFailure,
-                            call.value,
-                            call.callData,
+                            initialCall.target,
+                            initialCall.allowFailure,
+                            initialCall.value,
+                            initialCall.callData,
                         ],
                     ],
                 )
@@ -176,7 +187,7 @@ export class ClaveDeployer {
         const deployPromise = await Promise.all([
             // Deploy account
             (async (): Promise<void> => {
-                const deployTx = await factory.deployAccount(salt, initializer);
+                const deployTx = await factory.deployAccount(salt, initializer, { value: callValue });
                 await deployTx.wait();
             })(),
             // Calculate  new account address
