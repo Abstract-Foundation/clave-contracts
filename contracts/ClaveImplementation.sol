@@ -182,6 +182,7 @@ contract ClaveImplementation is
             revert Errors.VALIDATION_HOOK_FAILED();
         }
 
+        _incrementNonce(transaction.nonce);
         _executeTransaction(transaction);
     }
 
