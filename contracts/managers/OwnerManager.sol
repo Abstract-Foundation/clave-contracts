@@ -91,13 +91,6 @@ abstract contract OwnerManager is IOwnerManager, Auth {
     function _r1RemoveOwner(bytes calldata pubKey) internal {
         _r1OwnersLinkedList().remove(pubKey);
 
-        // The wallet should have at least one owner
-        if (
-            _k1OwnersLinkedList().isEmpty() && _r1OwnersLinkedList().isEmpty()
-        ) {
-            revert Errors.EMPTY_OWNERS();
-        }
-
         emit R1RemoveOwner(pubKey);
     }
 
@@ -105,9 +98,7 @@ abstract contract OwnerManager is IOwnerManager, Auth {
         _k1OwnersLinkedList().remove(addr);
 
         // The wallet should have at least one owner
-        if (
-            _k1OwnersLinkedList().isEmpty() && _r1OwnersLinkedList().isEmpty()
-        ) {
+        if (_k1OwnersLinkedList().isEmpty()) {
             revert Errors.EMPTY_OWNERS();
         }
 

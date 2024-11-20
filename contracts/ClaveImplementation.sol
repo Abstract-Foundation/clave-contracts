@@ -64,10 +64,15 @@ contract ClaveImplementation is
         address initialK1Validator,
         bytes[] calldata modules,
         Call calldata initCall
-    ) public initializer {
+    ) public payable initializer {
         __ERC1271Handler_init();
         // check that this account is being deployed by the initial signer or the factory authorized deployer
         AccountFactory factory = AccountFactory(msg.sender);
+        // require a specific salt for the acccount based on the initial k1 owner
+        address expectedAddress = factory.getAddressForSalt(keccak256(abi.encodePacked(initialK1Owner)));
+        if (address(this) != expectedAddress) {
+            revert Errors.INVALID_SALT();
+        }
         address thisDeployer = factory.accountToDeployer(address(this));
         if (thisDeployer != factory.deployer()) {
             if (initialK1Owner != thisDeployer) {
@@ -91,8 +96,13 @@ contract ClaveImplementation is
         }
     }
 
-    // Receive function to allow ETHs
+    // Receive function to allow ETH to be sent to the account
+    // with no additional calldata
     receive() external payable {}
+    
+    // Fallback function to allow ETH to be sent to the account
+    // with arbitrary calldata to mirror the behavior of an EOA
+    fallback() external payable {}
 
     /**
      * @notice Called by the bootloader to validate that an account agrees to process the transaction
@@ -172,6 +182,7 @@ contract ClaveImplementation is
             revert Errors.VALIDATION_HOOK_FAILED();
         }
 
+        _incrementNonce(transaction.nonce);
         _executeTransaction(transaction);
     }
 
@@ -235,13 +246,10 @@ contract ClaveImplementation is
         // Run validation hooks
         bool hookSuccess = runValidationHooks(signedHash, transaction, hookData);
 
-        if (!hookSuccess) {
-            return bytes4(0);
-        }
-
+        // Handle validation
         bool valid = _handleValidation(validator, signedHash, signature);
 
-        magicValue = valid ? ACCOUNT_VALIDATION_SUCCESS_MAGIC : bytes4(0);
+        magicValue = (hookSuccess && valid) ? ACCOUNT_VALIDATION_SUCCESS_MAGIC : bytes4(0);
     }
 
     function _executeTransaction(

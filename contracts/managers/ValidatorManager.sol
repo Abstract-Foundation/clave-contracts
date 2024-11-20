@@ -85,14 +85,6 @@ abstract contract ValidatorManager is IValidatorManager, Auth {
     function _r1RemoveValidator(address validator) internal {
         _r1ValidatorsLinkedList().remove(validator);
 
-        // At least one validator must be present
-        if (
-            _r1ValidatorsLinkedList().isEmpty() &&
-            _k1ValidatorsLinkedList().isEmpty()
-        ) {
-            revert Errors.EMPTY_VALIDATORS();
-        }
-
         emit R1RemoveValidator(validator);
     }
 
@@ -100,10 +92,7 @@ abstract contract ValidatorManager is IValidatorManager, Auth {
         _k1ValidatorsLinkedList().remove(validator);
 
         // At least one validator must be present
-        if (
-            _r1ValidatorsLinkedList().isEmpty() &&
-            _k1ValidatorsLinkedList().isEmpty()
-        ) {
+        if (_k1ValidatorsLinkedList().isEmpty()) {
             revert Errors.EMPTY_VALIDATORS();
         }
 

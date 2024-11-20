@@ -3,7 +3,7 @@ pragma solidity ^0.8.17;
 
 import {DEPLOYER_SYSTEM_CONTRACT, IContractDeployer} from '@matterlabs/zksync-contracts/l2/system-contracts/Constants.sol';
 import {SystemContractsCaller} from '@matterlabs/zksync-contracts/l2/system-contracts/libraries/SystemContractsCaller.sol';
-import {Ownable} from '@openzeppelin/contracts/access/Ownable.sol';
+import {Ownable, Ownable2Step} from '@openzeppelin/contracts/access/Ownable2Step.sol';
 
 import {Errors} from './libraries/Errors.sol';
 import {IClaveRegistry} from './interfaces/IClaveRegistry.sol';
@@ -12,9 +12,13 @@ import {IClaveRegistry} from './interfaces/IClaveRegistry.sol';
  * @title Factory contract to create Clave accounts in zkSync Era
  * @author https://getclave.io
  */
-contract AccountFactory is Ownable {
-    // Addresses of the implementation and registry contract
+contract AccountFactory is Ownable2Step {
+    // Address of the account implementation 
     address public implementationAddress;
+    // Selector of the account initializer function
+    bytes4 public initializerSelector;
+
+    // Account registry contract address
     address public registry;
 
     // Account creation bytecode hash
@@ -63,12 +67,14 @@ contract AccountFactory is Ownable {
      */
     constructor(
         address _implementation,
+        bytes4 _initializerSelector,
         address _registry,
         bytes32 _proxyBytecodeHash,
         address _deployer,
         address _owner
     ) Ownable(_owner) {
         implementationAddress = _implementation;
+        initializerSelector = _initializerSelector;
         registry = _registry;
         proxyBytecodeHash = _proxyBytecodeHash;
         deployer = _deployer;
@@ -84,8 +90,21 @@ contract AccountFactory is Ownable {
     function deployAccount(
         bytes32 salt,
         bytes memory initializer
-    ) external returns (address accountAddress) {
-
+    ) external payable returns (address accountAddress) {
+        // Check that the initializer is not empty
+        if (initializer.length < 4) {
+            revert Errors.INVALID_INITIALIZER();
+        }
+        // Check that the initializer selector is correct
+        {
+            bytes4 selector;
+            assembly ('memory-safe') {
+                selector := mload(add(initializer, 0x20))
+            }
+            if (selector != initializerSelector) {
+                revert Errors.INVALID_INITIALIZER();
+            }
+        }
         // Deploy the implementation contract
         (bool success, bytes memory returnData) = SystemContractsCaller.systemCallWithReturndata(
             uint32(gasleft()),
@@ -118,7 +137,7 @@ contract AccountFactory is Ownable {
             initializeSuccess := call(
                 gas(),
                 accountAddress,
-                0,
+                callvalue(),
                 add(initializer, 0x20),
                 mload(initializer),
                 0,
@@ -161,8 +180,9 @@ contract AccountFactory is Ownable {
      * @notice Changes the implementation contract address
      * @param newImplementation address - Address of the new implementation contract
      */
-    function changeImplementation(address newImplementation) external onlyOwner {
+    function changeImplementation(address newImplementation, bytes4 newInitializerSelector) external onlyOwner {
         implementationAddress = newImplementation;
+        initializerSelector = newInitializerSelector;
 
         emit ImplementationChanged(newImplementation);
     }

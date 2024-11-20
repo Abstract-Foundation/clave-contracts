@@ -100,6 +100,8 @@ library Errors {
 
     error DEPLOYMENT_FAILED();
     error INITIALIZATION_FAILED();
+    error INVALID_INITIALIZER();
+    error INVALID_SALT();
 
     /*//////////////////////////////////////////////////////////////
                             PAYMASTER
