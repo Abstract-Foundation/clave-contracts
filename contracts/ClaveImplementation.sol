@@ -102,7 +102,21 @@ contract ClaveImplementation is
     
     // Fallback function to allow ETH to be sent to the account
     // with arbitrary calldata to mirror the behavior of an EOA
-    fallback() external payable {}
+    fallback() external payable {
+        // Simulate the behavior of the EOA if it is called via `delegatecall`.
+        address codeAddress = SystemContractHelper.getCodeAddress();
+        if (codeAddress != address(this)) {
+            // If the function was delegate called, behave like an EOA.
+            assembly {
+                return(0, 0)
+            }
+        }
+
+        // fallback of default account shouldn't be called by bootloader under any circumstances
+        assert(msg.sender != BOOTLOADER_FORMAL_ADDRESS);
+
+        // If the contract is called directly, behave like an EOA
+    }
 
     /**
      * @notice Called by the bootloader to validate that an account agrees to process the transaction
