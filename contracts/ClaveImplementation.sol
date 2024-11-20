@@ -246,13 +246,10 @@ contract ClaveImplementation is
         // Run validation hooks
         bool hookSuccess = runValidationHooks(signedHash, transaction, hookData);
 
-        if (!hookSuccess) {
-            return bytes4(0);
-        }
-
+        // Handle validation
         bool valid = _handleValidation(validator, signedHash, signature);
 
-        magicValue = valid ? ACCOUNT_VALIDATION_SUCCESS_MAGIC : bytes4(0);
+        magicValue = (hookSuccess && valid) ? ACCOUNT_VALIDATION_SUCCESS_MAGIC : bytes4(0);
     }
 
     function _executeTransaction(
