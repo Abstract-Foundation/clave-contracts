@@ -6,7 +6,7 @@
 import { expect } from 'chai';
 import type { ec } from 'elliptic';
 import type { BytesLike, HDNodeWallet } from 'ethers';
-import { parseEther } from 'ethers';
+import { getAddress, hexlify, parseEther, randomBytes } from 'ethers';
 import * as hre from 'hardhat';
 import type { Contract, Wallet } from 'zksync-ethers';
 import { Provider } from 'zksync-ethers';
@@ -103,6 +103,41 @@ describe('Clave Contracts - Deployer class tests', () => {
 
             expect(await registry.isClave(accountAddress)).to.be.true;
             expect(await registry.isClave(factoryAddress)).not.to.be.true;
+        });
+
+        it('should not deploy an account with an invalid salt', async () => {
+            const salt = randomBytes(32);
+            await expect(deployer.account(wallet, factory, eoaValidator, { salt: hexlify(salt) }))
+                .to.be.revertedWithCustomError(factory, "INITIALIZATION_FAILED");
+        });
+
+        it('should not deploy an account with an empty initializer', async () => {
+            await expect(deployer.account(wallet, factory, eoaValidator, { initializer: '0x' }))
+            .to.be.revertedWithCustomError(factory, "INVALID_INITIALIZER");
+        });
+
+        it('should not deploy an account with an invalid initializer selector', async () => {
+            await expect(deployer.account(wallet, factory, eoaValidator, { initializer: '0xabababab' }))
+            .to.be.revertedWithCustomError(factory, "INVALID_INITIALIZER");
+        });
+
+        it('should deploy an account with a payable initial call', async () => {
+            const target = getAddress('0x0000000000000000000000000000000000abcdef');
+            const initialCall = {
+                target,
+                allowFailure: false,
+                value: parseEther('0.9'),
+                callData: '0x',
+            };
+            const otherWallet = getWallet(hre, LOCAL_RICH_WALLETS[1].privateKey);
+            const newAccount = await deployer.account(otherWallet, factory, eoaValidator, { 
+                initialCall, 
+                callValue: parseEther('1') 
+            });
+
+            expect(await provider.getBalance(target)).to.eq(parseEther('0.9'));
+            expect(await provider.getBalance(await newAccount.getAddress())).to.eq(parseEther('0.1'));
+
         });
     });
 });

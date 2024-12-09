@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.17;
 
-import {Ownable} from '@openzeppelin/contracts/access/Ownable.sol';
+import {Ownable, Ownable2Step} from '@openzeppelin/contracts/access/Ownable2Step.sol';
 
 import {Errors} from './libraries/Errors.sol';
 import {IClaveRegistry} from './interfaces/IClaveRegistry.sol';
 
-contract ClaveRegistry is Ownable, IClaveRegistry {
+contract ClaveRegistry is Ownable2Step, IClaveRegistry {
     mapping(address => bool) public isFactory;
     // Mapping of Clave accounts
     mapping(address => bool) public isClave;
