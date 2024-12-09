@@ -7,6 +7,7 @@ import {OwnerManager} from '../managers/OwnerManager.sol';
 import {ValidatorManager} from '../managers/ValidatorManager.sol';
 
 import {IK1Validator, IR1Validator} from '../interfaces/IValidator.sol';
+import {IModuleValidator} from '../interfaces/IModuleValidator.sol';
 
 /**
  * @title ValidationHandler
@@ -54,6 +55,8 @@ abstract contract ValidationHandler is OwnerManager, ValidatorManager {
             if (OwnerManager._k1IsOwner(recoveredAddress)) {
                 return true;
             }
+        } else if (_isModuleValidator(validator)) {
+            return IModuleValidator(validator).handleValidation(signedHash, signature);
         }
 
         return false;
