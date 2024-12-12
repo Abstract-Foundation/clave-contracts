@@ -74,7 +74,7 @@ describe('Clave Contracts - ERC-20 Paymaster tests', () => {
         ).to.eq(parseEther('50'));
 
         expect(await provider.getBalance(await account.getAddress())).to.eq(
-            parseEther('10000'),
+            parseEther('1000'),
         );
 
         expect(await erc20.balanceOf(await account.getAddress())).to.be.eq(
