@@ -38,7 +38,7 @@ describe('Clave Contracts - Upgrade Manager tests', () => {
 
         const accountAddress = await account.getAddress();
 
-        await deployer.fund(10000, accountAddress);
+        await deployer.fund(1000, accountAddress);
     });
 
     describe('Upgrade Manager', () => {

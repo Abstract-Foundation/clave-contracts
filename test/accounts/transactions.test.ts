@@ -44,7 +44,7 @@ describe('Clave Contracts - Account tests', () => {
 
         const accountAddress = await account.getAddress();
 
-        await deployer.fund(10000, accountAddress);
+        await deployer.fund(1000, accountAddress);
 
         erc20 = await deployer.deployCustomContract('MockStable', []);
         await erc20.mint(accountAddress, parseEther('100000'));
