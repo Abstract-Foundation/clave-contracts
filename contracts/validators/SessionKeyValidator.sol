@@ -22,8 +22,6 @@ contract SessionKeyValidator is IValidationHook, IModuleValidator, IModule {
   event SessionCreated(address indexed account, bytes32 indexed sessionHash, SessionLib.SessionSpec sessionSpec);
   event SessionRevoked(address indexed account, bytes32 indexed sessionHash);
 
-  bytes4 constant EIP1271_SUCCESS_RETURN_VALUE = 0x1626ba7e;
-
   // account => number of open sessions
   // NOTE: expired sessions are still counted if not explicitly revoked
   mapping(address => uint256) private sessionCounter;
@@ -129,6 +127,10 @@ contract SessionKeyValidator is IValidationHook, IModuleValidator, IModule {
   }
 
   function validationHook(bytes32 signedHash, Transaction calldata transaction, bytes calldata hookData) external {
+    if (hookData.length == 0) {
+      // There's no session data so we aren't validating anything
+      return;
+    }
     (bytes memory signature, address validator, ) = abi.decode(transaction.signature, (bytes, address, bytes[]));
     if (validator != address(this)) {
       // This transaction is not meant to be validated by this module
@@ -140,6 +142,11 @@ contract SessionKeyValidator is IValidationHook, IModuleValidator, IModule {
     );
     (address recoveredAddress, , ) = ECDSA.tryRecover(signedHash, signature);
     require(recoveredAddress == spec.signer, "Invalid signer");
+
+    // Disallow self-targeting transactions with session keys as these have the ability to administer
+    // the smart account.
+    require(transaction.to != msg.sender, "Can not target self");
+
     bytes32 sessionHash = keccak256(abi.encode(spec));
     sessions[sessionHash].validate(transaction, spec, periodIds);
 
