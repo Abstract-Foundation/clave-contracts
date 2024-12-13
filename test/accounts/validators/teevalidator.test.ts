@@ -48,7 +48,7 @@ describe('Clave Contracts - TEE Validator tests', () => {
 
         const accountAddress = await account.getAddress();
 
-        await deployer.fund(1000, accountAddress);
+        await deployer.fund(100, accountAddress);
 
         await addR1Validator(
             provider,
