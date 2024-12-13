@@ -85,6 +85,11 @@ abstract contract HookManager is IHookManager, Auth {
         uint256 idx = 0;
         // Iterate through hooks
         while (cursor > AddressLinkedList.SENTINEL_ADDRESS) {
+            // hookData array is out of bounds for the number of hooks
+            if (idx >= hookData.length) {
+                return false;
+            }
+
             // Call it with corresponding hookData
             bool success = _call(
                 cursor,
@@ -171,6 +176,11 @@ abstract contract HookManager is IHookManager, Auth {
         } else {
             _executionHooksLinkedList().remove(hook);
         }
+        
+        // if the hook removal occured during execution of hooks, the hook 
+        // context will not be cleaned up during post execution so we need
+        // to delete it manually
+        _deleteContext(hook);
 
         (bool success, ) = hook.excessivelySafeCall(
             gasleft(),
