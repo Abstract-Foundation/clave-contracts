@@ -143,10 +143,6 @@ contract SessionKeyValidator is IValidationHook, IModuleValidator, IModule {
     (address recoveredAddress, , ) = ECDSA.tryRecover(signedHash, signature);
     require(recoveredAddress == spec.signer, "Invalid signer");
 
-    // Disallow self-targeting transactions with session keys as these have the ability to administer
-    // the smart account.
-    require(address(uint160(transaction.to)) != msg.sender, "Can not target self");
-
     bytes32 sessionHash = keccak256(abi.encode(spec));
     sessions[sessionHash].validate(transaction, spec, periodIds);
 

@@ -194,6 +194,10 @@ library SessionLib {
     }
 
     if (transaction.data.length >= 4) {
+      // Disallow self-targeting transactions with session keys as these have the ability to administer
+      // the smart account.
+      require(address(uint160(transaction.to)) != msg.sender, "Can not target self");
+
       bytes4 selector = bytes4(transaction.data[:4]);
       CallSpec memory callPolicy;
       bool found = false;
