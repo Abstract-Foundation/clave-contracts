@@ -44,6 +44,8 @@ contract ClaveImplementation is
     // Batch transaction helper contract
     address private immutable _BATCH_CALLER;
 
+    uint256 public constant VERSION = 1;
+
     /**
      * @notice Constructor for the account implementation
      * @param batchCaller address - Batch transaction helper contract
