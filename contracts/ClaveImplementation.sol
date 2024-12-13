@@ -4,8 +4,9 @@ pragma solidity ^0.8.17;
 import {IAccount, ACCOUNT_VALIDATION_SUCCESS_MAGIC} from '@matterlabs/zksync-contracts/l2/system-contracts/interfaces/IAccount.sol';
 import {Transaction, TransactionHelper} from '@matterlabs/zksync-contracts/l2/system-contracts/libraries/TransactionHelper.sol';
 import {EfficientCall} from '@matterlabs/zksync-contracts/l2/system-contracts/libraries/EfficientCall.sol';
-import {NONCE_HOLDER_SYSTEM_CONTRACT, DEPLOYER_SYSTEM_CONTRACT, INonceHolder} from '@matterlabs/zksync-contracts/l2/system-contracts/Constants.sol';
+import {FORMAL_BOOTLOADER_ADDRES, NONCE_HOLDER_SYSTEM_CONTRACT, DEPLOYER_SYSTEM_CONTRACT, INonceHolder} from '@matterlabs/zksync-contracts/l2/system-contracts/Constants.sol';
 import {SystemContractsCaller} from '@matterlabs/zksync-contracts/l2/system-contracts/libraries/SystemContractsCaller.sol';
+import {SystemContractHelper} from '@matterlabs/zksync-contracts/l2/system-contracts/libraries/SystemContractHelper.sol';
 import {Utils} from '@matterlabs/zksync-contracts/l2/system-contracts/libraries/Utils.sol';
 import {Initializable} from '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
 
@@ -248,6 +249,11 @@ contract ClaveImplementation is
         bytes32 signedHash,
         Transaction calldata transaction
     ) internal returns (bytes4 magicValue) {
+        if (transaction.signature.length == 65) {
+            // This is a gas estimation
+            return bytes4(0);
+        }
+        
         // Extract the signature, validator address and hook data from the transaction.signature
         (bytes memory signature, address validator, bytes[] memory hookData) = SignatureDecoder
             .decodeSignature(transaction.signature);
