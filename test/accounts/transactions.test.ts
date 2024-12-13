@@ -44,7 +44,7 @@ describe('Clave Contracts - Account tests', () => {
 
         const accountAddress = await account.getAddress();
 
-        await deployer.fund(1000, accountAddress);
+        await deployer.fund(500, accountAddress);
 
         erc20 = await deployer.deployCustomContract('MockStable', []);
         await erc20.mint(accountAddress, parseEther('100000'));
@@ -152,7 +152,7 @@ describe('Clave Contracts - Account tests', () => {
         });
 
         it('should send batch tx / delegate call', async () => {
-            const amount = parseEther('100');
+            const amount = parseEther('10');
             const delta = parseEther('0.01');
 
             const [accountERC20BalanceBefore, richERC20BalanceBefore] =

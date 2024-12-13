@@ -50,7 +50,7 @@ describe('Clave Contracts - ERC-20 Paymaster tests', () => {
 
         const accountAddress = await account.getAddress();
 
-        await deployer.fund(1000, accountAddress);
+        await deployer.fund(100, accountAddress);
 
         erc20 = await deployer.deployCustomContract('MockStable', []);
         await erc20.mint(accountAddress, parseEther('100000'));
@@ -74,7 +74,7 @@ describe('Clave Contracts - ERC-20 Paymaster tests', () => {
         ).to.eq(parseEther('50'));
 
         expect(await provider.getBalance(await account.getAddress())).to.eq(
-            parseEther('1000'),
+            parseEther('100'),
         );
 
         expect(await erc20.balanceOf(await account.getAddress())).to.be.eq(
@@ -226,7 +226,7 @@ describe('Clave Contracts - ERC-20 Paymaster tests', () => {
         });
 
         it('should send batch tx / delegate call and pay gas with erc20 token', async () => {
-            const amount = parseEther('100');
+            const amount = parseEther('1');
 
             const richERC20BalanceBefore = await erc20.balanceOf(richAddress);
 
