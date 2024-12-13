@@ -145,7 +145,7 @@ contract SessionKeyValidator is IValidationHook, IModuleValidator, IModule {
 
     // Disallow self-targeting transactions with session keys as these have the ability to administer
     // the smart account.
-    require(transaction.to != msg.sender, "Can not target self");
+    require(address(uint160(transaction.to)) != msg.sender, "Can not target self");
 
     bytes32 sessionHash = keccak256(abi.encode(spec));
     sessions[sessionHash].validate(transaction, spec, periodIds);
