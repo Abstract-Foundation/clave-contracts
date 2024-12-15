@@ -51,9 +51,6 @@ const dockerizedNode: NetworkUserConfig = {
 };
 
 const abstractTestnet: NetworkUserConfig = {
-    accounts: [
-        process.env.PRIVATE_KEY as string
-    ],
     url: "https://api.testnet.abs.xyz",
     ethNetwork: "sepolia",
     zksync: true,
