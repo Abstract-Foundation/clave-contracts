@@ -144,9 +144,9 @@ contract SessionKeyValidator is IValidationHook, IModuleValidator, IModule {
     bytes32 sessionHash = keccak256(abi.encode(spec));
     // this generally throws instead of returning false
     sessions[sessionHash].validate(transaction, spec, periodIds);
-    (address recoveredAddress, ECDSA.RecoverError recoverError) = ECDSA.tryRecover(signedHash, transactionSignature);
+    (address recoveredAddress, ECDSA.RecoverError recoverError, ) = ECDSA.tryRecover(signedHash, signature);
     if (recoverError != ECDSA.RecoverError.NoError || recoveredAddress == address(0)) {
-      return false;
+      return;
     }
     require(recoveredAddress == spec.signer, "Invalid signer (mismatch)");
     // This check is separate and performed last to prevent gas estimation failures
