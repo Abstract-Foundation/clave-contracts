@@ -26,7 +26,6 @@ describe('Clave Contracts - ERC-20 Paymaster tests', () => {
     let deployer: ClaveDeployer;
     let provider: Provider;
     let richWallet: Wallet;
-    let batchCaller: Contract;
     let eoaValidator: Contract;
     let mockValidator: Contract;
     let account: Contract;
@@ -43,7 +42,7 @@ describe('Clave Contracts - ERC-20 Paymaster tests', () => {
             cacheTimeout: -1,
         });
 
-        ({ batchCaller, eoaValidator, mockValidator, account, wallet, keyPair } = await fixture(
+        ({ eoaValidator, mockValidator, account, wallet, keyPair } = await fixture(
             deployer,
             VALIDATORS.EOA,
         ));
@@ -251,7 +250,6 @@ describe('Clave Contracts - ERC-20 Paymaster tests', () => {
             const batchTx = await prepareBatchTx(
                 provider,
                 account,
-                await batchCaller.getAddress(),
                 calls,
                 await eoaValidator.getAddress(),
                 keyPair,

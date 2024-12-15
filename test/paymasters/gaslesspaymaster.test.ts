@@ -26,7 +26,6 @@ describe('Clave Contracts - Gasless Paymaster tests', () => {
     let deployer: ClaveDeployer;
     let provider: Provider;
     let richWallet: Wallet;
-    let batchCaller: Contract;
     let registry: Contract;
     let eoaValidator: Contract;
     let account: Contract;
@@ -43,7 +42,7 @@ describe('Clave Contracts - Gasless Paymaster tests', () => {
             cacheTimeout: -1,
         });
 
-        ({ batchCaller, registry, eoaValidator, account, wallet, keyPair } = await fixture(
+        ({ registry, eoaValidator, account, wallet, keyPair } = await fixture(
             deployer,
             VALIDATORS.EOA
         ));
@@ -253,7 +252,6 @@ describe('Clave Contracts - Gasless Paymaster tests', () => {
             const batchTx = await prepareBatchTx(
                 provider,
                 account,
-                await batchCaller.getAddress(),
                 calls,
                 await eoaValidator.getAddress(),
                 keyPair,

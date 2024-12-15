@@ -12,7 +12,6 @@ import { genKey } from './p256';
 import { ec } from 'elliptic';
 
 export type fixtureTypes = {
-    batchCaller: Contract,
     registry: Contract,
     implementation: Contract,
     factory: Contract,
@@ -31,9 +30,8 @@ export const fixture = async (
 ): Promise<fixtureTypes> => {
     const wallet = HDNodeWallet.createRandom();
 
-    const batchCaller = await deployer.batchCaller();
     const registry = await deployer.registry();
-    const implementation = await deployer.implementation(batchCaller);
+    const implementation = await deployer.implementation();
     const factory = await deployer.factory(implementation, registry);
     const eoaValidator = await deployer.validator(VALIDATORS.EOA);
     const teeValidator = await deployer.validator(VALIDATORS.TEE);
@@ -53,7 +51,6 @@ export const fixture = async (
     const keyPair = genKey();
 
     return {
-        batchCaller,
         registry,
         implementation,
         factory,

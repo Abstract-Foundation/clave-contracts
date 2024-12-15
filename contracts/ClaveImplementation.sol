@@ -24,6 +24,7 @@ import {Call} from './batch/BatchCaller.sol';
 
 import {IClaveAccount} from './interfaces/IClave.sol';
 import {AccountFactory} from './AccountFactory.sol';
+import {BatchCaller} from './batch/BatchCaller.sol';
 
 /**
  * @title Main account contract for the Clave wallet infrastructure, forked for Abstract
@@ -37,21 +38,18 @@ contract ClaveImplementation is
     ModuleManager,
     ERC1271Handler,
     TokenCallbackHandler,
+    BatchCaller,
     IClaveAccount
 {
     // Helper library for the Transaction struct
     using TransactionHelper for Transaction;
-    // Batch transaction helper contract
-    address private immutable _BATCH_CALLER;
 
     uint256 public constant VERSION = 1;
 
     /**
      * @notice Constructor for the account implementation
-     * @param batchCaller address - Batch transaction helper contract
      */
-    constructor(address batchCaller) {
-        _BATCH_CALLER = batchCaller;
+    constructor() {
         _disableInitializers();
     }
 
@@ -297,11 +295,6 @@ contract ClaveImplementation is
                     let size := mload(returnData)
                     revert(add(returnData, 0x20), size)
                 }
-            }
-        } else if (to == _BATCH_CALLER) {
-            bool success = EfficientCall.rawDelegateCall(gas, to, data);
-            if (!success && !allowFailure) {
-                EfficientCall.propagateRevert();
             }
         } else {
             bool success = EfficientCall.rawCall(gas, to, value, data, false);

@@ -124,7 +124,7 @@ contract SessionKeyValidator is IValidationHook, IModuleValidator, IModule {
 
   function _isInitialized(address smartAccount) internal view returns (bool) {
     return IHookManager(smartAccount).isHook(address(this));
-  }
+  }  
 
   function validationHook(bytes32 signedHash, Transaction calldata transaction, bytes calldata hookData) external {
     if (hookData.length == 0) {
@@ -140,11 +140,17 @@ contract SessionKeyValidator is IValidationHook, IModuleValidator, IModule {
       hookData,
       (SessionLib.SessionSpec, uint64[])
     );
-    (address recoveredAddress, , ) = ECDSA.tryRecover(signedHash, signature);
-    require(recoveredAddress == spec.signer, "Invalid signer");
-
+    require(spec.signer != address(0), "Invalid signer (empty)");
     bytes32 sessionHash = keccak256(abi.encode(spec));
+    // this generally throws instead of returning false
     sessions[sessionHash].validate(transaction, spec, periodIds);
+    (address recoveredAddress, ECDSA.RecoverError recoverError) = ECDSA.tryRecover(signedHash, transactionSignature);
+    if (recoverError != ECDSA.RecoverError.NoError || recoveredAddress == address(0)) {
+      return false;
+    }
+    require(recoveredAddress == spec.signer, "Invalid signer (mismatch)");
+    // This check is separate and performed last to prevent gas estimation failures
+    sessions[sessionHash].validateFeeLimit(transaction, spec, periodIds[0]);
 
     // Set the validation result to 1 for this hash, so that isValidSignature succeeds
     uint256 slot = uint256(signedHash);

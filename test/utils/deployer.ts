@@ -28,18 +28,6 @@ export class ClaveDeployer {
             : (this.deployerWallet = deployerWallet);
     }
 
-    public async batchCaller(): Promise<Contract> {
-        return await deployContract(
-            this.hre,
-            CONTRACT_NAMES.BATCH_CALLER,
-            undefined,
-            {
-                wallet: this.deployerWallet,
-                silent: true,
-            },
-        );
-    }
-
     public async registry(): Promise<Contract> {
         return await deployContract(
             this.hre,
@@ -52,11 +40,11 @@ export class ClaveDeployer {
         );
     }
 
-    public async implementation(batchCaller: Contract): Promise<Contract> {
+    public async implementation(): Promise<Contract> {
         return await deployContract(
             this.hre,
             CONTRACT_NAMES.IMPLEMENTATION,
-            [await batchCaller.getAddress()],
+            [],
             {
                 wallet: this.deployerWallet,
                 silent: true,
@@ -108,17 +96,15 @@ export class ClaveDeployer {
     }
 
     public async setupFactory(): Promise<{
-        batchCaller: Contract;
         registry: Contract;
         implementation: Contract;
         factory: Contract;
     }> {
-        const batchCaller = await this.batchCaller();
         const registry = await this.registry();
-        const implementation = await this.implementation(batchCaller);
+        const implementation = await this.implementation();
         const factory = await this.factory(implementation, registry);
 
-        return { batchCaller, registry, implementation, factory };
+        return { registry, implementation, factory };
     }
 
     public async validator(name: VALIDATORS): Promise<Contract> {

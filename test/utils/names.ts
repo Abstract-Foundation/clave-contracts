@@ -5,7 +5,6 @@
  */
 
 export const CONTRACT_NAMES = {
-    BATCH_CALLER: 'BatchCaller',
     REGISTRY: 'ClaveRegistry',
     IMPLEMENTATION: 'ClaveImplementation',
     PROXY: 'ClaveProxy',

@@ -58,37 +58,27 @@ export async function prepareMockTx(
 export async function prepareMockBatchTx(
     provider: Provider,
     account: Contract,
-    BatchCallerAddress: string,
     calls: Array<CallStruct>,
     validatorAddress: string,
     hookData: Array<ethers.BytesLike> = [],
     paymasterParams?: types.PaymasterParams,
 ): Promise<types.TransactionLike> {
     const abiCoder = ethers.AbiCoder.defaultAbiCoder();
-
-    const data =
-        '0x8f0273a9' +
-        abiCoder
-            .encode(
-                [
-                    'tuple(address target, bool allowFailure, uint256 value, bytes callData)[]',
-                ],
-                [calls],
-            )
-            .slice(2);
-
-    let totalValue: BigNumberish = '0';
+    
+    let totalValue: BigNumberish = BigInt(0);
     for (const call of calls) {
-        totalValue += call.value;
+        totalValue += BigInt(call.value);
     }
 
+    const accountAddress = await account.getAddress();
+
     const tx = {
-        to: BatchCallerAddress,
-        from: await account.getAddress(),
-        nonce: await provider.getTransactionCount(await account.getAddress()),
+        to: accountAddress,
+        from: accountAddress,
+        nonce: await provider.getTransactionCount(accountAddress),
         gasLimit: 30_000_000,
         gasPrice: await provider.getGasPrice(),
-        data,
+        data: account.interface.encodeFunctionData("batchCall", [calls]),
         value: totalValue,
         chainId: (await provider.getNetwork()).chainId,
         type: 113,
@@ -159,7 +149,6 @@ export async function prepareTeeTx(
 export async function prepareBatchTx(
     provider: Provider,
     account: Contract,
-    BatchCallerAddress: string,
     calls: Array<CallStruct>,
     validatorAddress: string,
     keyPair: ec.KeyPair,
@@ -168,29 +157,21 @@ export async function prepareBatchTx(
     wallet?: HDNodeWallet,
 ): Promise<types.TransactionLike> {
     const abiCoder = ethers.AbiCoder.defaultAbiCoder();
-    const data =
-        '0x8f0273a9' +
-        abiCoder
-            .encode(
-                [
-                    'tuple(address target, bool allowFailure, uint256 value, bytes callData)[]',
-                ],
-                [calls],
-            )
-            .slice(2);
-
-    let totalValue: BigNumberish = '0';
+    
+    let totalValue: BigNumberish = 0n;
     for (const call of calls) {
-        totalValue += call.value;
+        totalValue += BigInt(call.value);
     }
 
+    const accountAddress = await account.getAddress();
+    
     const tx = {
-        to: BatchCallerAddress,
-        from: await account.getAddress(),
-        nonce: await provider.getTransactionCount(await account.getAddress()),
+        to: accountAddress,
+        from: accountAddress,
+        nonce: await provider.getTransactionCount(accountAddress),
         gasLimit: 30_000_000,
         gasPrice: await provider.getGasPrice(),
-        data,
+        data: account.interface.encodeFunctionData("batchCall", [calls]),
         value: totalValue,
         chainId: (await provider.getNetwork()).chainId,
         type: 113,

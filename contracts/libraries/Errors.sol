@@ -140,4 +140,6 @@ library Errors {
 
     error MODULE_NOT_ADDED_CORRECTLY(); // 0xb66e8ec4
     error MODULE_NOT_REMOVED_CORRECTLY(); // 0x680c8744
+
+    error MsgValueMismatch(uint256 actualValue, uint256 expectedValue);
 }

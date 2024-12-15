@@ -20,7 +20,6 @@ describe('Clave Contracts - Deployer class tests', () => {
     let deployer: ClaveDeployer;
     let provider: Provider;
     let richWallet: Wallet;
-    let batchCaller: Contract;
     let registry: Contract;
     let implementation: Contract;
     let factory: Contract;
@@ -37,7 +36,6 @@ describe('Clave Contracts - Deployer class tests', () => {
         });
 
         ({
-            batchCaller,
             registry,
             implementation,
             factory,
@@ -52,7 +50,6 @@ describe('Clave Contracts - Deployer class tests', () => {
 
     describe('Contracts', () => {
         it('should deploy the contracts', async () => {
-            expect(await batchCaller.getAddress()).not.to.be.undefined;
             expect(await registry.getAddress()).not.to.be.undefined;
             expect(await implementation.getAddress()).not.to.be.undefined;
             expect(await factory.getAddress()).not.to.be.undefined;

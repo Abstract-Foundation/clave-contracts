@@ -25,7 +25,6 @@ describe('Clave Contracts - Account tests', () => {
     let deployer: ClaveDeployer;
     let provider: Provider;
     let richWallet: Wallet;
-    let batchCaller: Contract;
     let eoaValidator: Contract;
     let keyPair: ec.KeyPair;
     let wallet: HDNodeWallet;
@@ -40,7 +39,7 @@ describe('Clave Contracts - Account tests', () => {
             cacheTimeout: -1,
         });
 
-        ({batchCaller, eoaValidator, account, wallet, keyPair} = await fixture(deployer, VALIDATORS.EOA))
+        ({eoaValidator, account, wallet, keyPair} = await fixture(deployer, VALIDATORS.EOA))
 
         const accountAddress = await account.getAddress();
 
@@ -182,7 +181,6 @@ describe('Clave Contracts - Account tests', () => {
             const batchTx = await prepareBatchTx(
                 provider,
                 account,
-                await batchCaller.getAddress(),
                 calls,
                 await eoaValidator.getAddress(),
                 keyPair,
