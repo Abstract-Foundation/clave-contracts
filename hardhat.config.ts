@@ -60,7 +60,7 @@ const abstractTestnet: NetworkUserConfig = {
 
 const config: HardhatUserConfig = {
     zksolc: {
-        version: 'latest',
+        version: '1.5.6',
         settings: {
             enableEraVMExtensions: true,
             optimizer: process.env.TEST
